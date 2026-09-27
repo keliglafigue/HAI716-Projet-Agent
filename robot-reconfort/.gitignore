@@ -1,3 +1,4 @@
 sorties/
 __pycache__/
+sortie.json
 *.pyc

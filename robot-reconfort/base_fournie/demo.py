@@ -19,6 +19,8 @@ import sys
 from pathlib import Path
 
 import reconfort_io as rio
+from prefabs.dictionnaire import Dictionnaire
+from prefabs.carte import Carte
 
 
 def main(argv):
@@ -65,7 +67,6 @@ def main(argv):
         nom_scenario=scenario["nom"],
         equipe=["A completer", "A completer"],
     )
-
     for demande in scenario["demandes"]:
         numero = demande["numero"]
         print(f"\ndemande {numero} ({demande['resident']}) : "
