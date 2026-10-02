@@ -21,6 +21,7 @@ from pathlib import Path
 import reconfort_io as rio
 from prefabs.dictionnaire import Dictionnaire
 from prefabs.carte import Carte
+from prefabs.armoire import Armoire
 
 
 def main(argv):
@@ -41,6 +42,8 @@ def main(argv):
     except rio.ErreurFichier as err:
         print(f"erreur de chargement : {err}", file=sys.stderr)
         return 1
+
+    armoirs = Armoire(dossier_donnees / f"{scenario['armoire']}.json")
 
     print(f"carte        : {carte['nom']} "
           f"{carte['dimensions']['hauteur']}x{carte['dimensions']['largeur']}, "

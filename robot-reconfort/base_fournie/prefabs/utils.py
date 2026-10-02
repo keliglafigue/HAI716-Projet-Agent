@@ -3,6 +3,13 @@ Ce fichier regroupe différentes structures de données utiles à différents en
 """
 
 from math import sqrt
+from enum import Enum
+
+class Direction(Enum):
+    N = 0
+    S = 1
+    O = 2
+    E = 3
 
 class Pos:
     def __init__(self, x=0, y=0):
@@ -33,6 +40,13 @@ class Pos:
     def moveUp(self) -> tuple[(int | float), (int | float)]:
         self.y += 1
         return self.x, self.y
+    
+    def move(self, dir:Direction) -> "Pos":
+        match dir:
+            case Direction.N: return Pos(self.x, self.y+1)
+            case Direction.S: return Pos(self.x, self.y-1)
+            case Direction.O: return Pos(self.x+1, self.y)
+            case Direction.E: return Pos(self.x-1, self.y)
 
 # ATTENTION : Cette classe n'a pas encore été testée
 class File :
