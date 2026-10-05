@@ -1,4 +1,4 @@
-from pathlib import Path
+from typing import Any, Dict
 import reconfort_io as rio
 
 class Dictionnaire:
@@ -11,9 +11,8 @@ class Dictionnaire:
     - Potentiellement transférer rio.normaliser dans cette classe, que je sache c'est le seul endroit ou elle est utile
     """
 
-    def __init__(self, chemin: str | Path):
+    def __init__(self, base_dico : Dict[str, Any]):
        self.dico = {}
-       base_dico = rio.charger_dictionnaire(chemin)
        for o in base_dico.get("entrees") :
             entrees = o.get("formes")
             emotion = o.get("emotion")

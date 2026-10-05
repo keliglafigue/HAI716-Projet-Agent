@@ -19,9 +19,7 @@ import sys
 from pathlib import Path
 
 import reconfort_io as rio
-from prefabs.dictionnaire import Dictionnaire
-from prefabs.carte import Carte
-from prefabs.armoire import Armoire
+from prefabs.monde import Monde
 
 
 def main(argv):
@@ -31,6 +29,7 @@ def main(argv):
 
     chemin_carte, chemin_scenario = Path(argv[1]), Path(argv[2])
     dossier_donnees, chemin_sortie = Path(argv[3]), Path(argv[4])
+
 
     try:
         carte = rio.charger_carte(chemin_carte)
@@ -42,8 +41,8 @@ def main(argv):
     except rio.ErreurFichier as err:
         print(f"erreur de chargement : {err}", file=sys.stderr)
         return 1
-
-    armoirs = Armoire(dossier_donnees / f"{scenario['armoire']}.json")
+    
+    monde = Monde(carte, dictionnaire, armoire, scenario)
 
     print(f"carte        : {carte['nom']} "
           f"{carte['dimensions']['hauteur']}x{carte['dimensions']['largeur']}, "

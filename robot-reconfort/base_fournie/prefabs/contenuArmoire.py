@@ -12,17 +12,17 @@ class contenuArmoire:
         self.mat = mat
         
     
-    def regarderObjet(pos:Pos) -> str:
-        if (pos.x < 0 or pos.x >= largeur or pos.y < 0 or pos.y >= hauteur): raise "Contenu Armoire : index hors range"
-        return mat[pos.x][pos.y]
+    def regarderObjet(self, pos:Pos) -> str:
+        if (pos.x < 0 or pos.x >= self.largeur or pos.y < 0 or pos.y >= self.hauteur): raise "Contenu Armoire : index hors range"
+        return self.mat[pos.x][pos.y]
     
-    def ajouterObjet(x:int, y:int, objet:str) -> str:
-        if (pos.x < 0 or pos.x >= largeur or pos.y < 0 or pos.y >= hauteur): raise "Contenu Armoire : index hors range"
-        mat[pos.x][pos.y] = objet
+    def ajouterObjet(self, pos:Pos, objet:str) -> str:
+        if (pos.x < 0 or pos.x >= self.largeur or pos.y < 0 or pos.y >= self.hauteur): raise "Contenu Armoire : index hors range"
+        self.mat[pos.x][pos.y] = objet
     
-    def supprimerObjet(x:int, y:int) -> str:
-        if (pos.x < 0 or pos.x >= largeur or pos.y < 0 or pos.y >= hauteur): raise "Contenu Armoire : index hors range"
-        if (mat[pos.x][pos.y] == ""): raise "Contenu Armoire : Suppression d'un objet inexistant"
-        mat[pos.x][pos.y] = ""
+    def supprimerObjet(self, pos:Pos) -> str:
+        if (pos.x < 0 or pos.x >= self.largeur or pos.y < 0 or pos.y >= self.hauteur): raise "Contenu Armoire : index hors range"
+        if (self.mat[pos.x][pos.y] == ""): raise "Contenu Armoire : Suppression d'un objet inexistant"
+        self.mat[pos.x][pos.y] = ""
         
         

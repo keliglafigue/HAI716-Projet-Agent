@@ -18,7 +18,7 @@ import reconfort_io as rio
 from prefabs.monde import Monde
 
 def main(argv: list[str]) -> int:
-    if len(argv != 5):
+    if len(argv) != 5:
         print(__doc__.strip())
         return 2
     
@@ -39,6 +39,8 @@ def main(argv: list[str]) -> int:
     for demande in scenario["demandes"]:
         # Mettre dans un try plus tard pour une gestion propre des erreurs
         monde.executer_requete(demande)
+        print("Demande numéro", demande["numero"],"effectuée")
+        pass
  
     return 0
 

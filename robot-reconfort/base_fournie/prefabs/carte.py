@@ -1,6 +1,5 @@
 from enum import Enum
-from pathlib import Path
-import reconfort_io as rio
+from typing import Any, Dict
 
 class Cellule(Enum) :
     MUR = 0
@@ -21,12 +20,11 @@ class Carte:
     - Que faire de la position de départ du robot, la stockée à part ? (pour l'instant elle est ignorée)
     """
 
-    def __init__(self, chemin: str | Path):
+    def __init__(self, base_carte: Dict[str, Any]):
         self.hauteur = 0
         self.largeur = 0
         self.carte = []
 
-        base_carte = rio.charger_carte(chemin)
         self.hauteur = base_carte.get("dimensions").get("hauteur")
         self.largeur = base_carte.get("dimensions").get("largeur")
 
