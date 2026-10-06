@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any, Dict
+from utils import Pos, File
 
 class Cellule(Enum) :
     MUR = 0
@@ -41,3 +42,76 @@ class Carte:
                     case 'resident' : line.append(Cellule.RESIDENT)
                     case _ : raise "Cellule inconnue dans la carte"
             self.carte.append(line)
+
+
+class Case:
+    """
+    Représentation d'une case du monde pour la carte du robot
+    """
+    def __init__(self):
+        self.type = Cellule.LIBRE
+        self.distance = -1
+        self.estParcouru = False
+
+    def changerType(self, nouveauType: Cellule):
+        self.type = nouveauType
+
+    def marquer(self):
+        if self.estParcouru: 
+            raise "Erreur: Marquage d'une case déjà marqué"
+        self.estParcouru = True
+
+    def reinitialiser(self):
+        self.estParcouru = False
+
+    def setDistance(self, n: int):
+        if n < 0:
+            raise "Erreur: distance négative affecté à une case"
+        self.distance = n
+
+
+class CarteRobot:
+    """
+    Représentation du monde tel que connu par le robot.
+    """
+    def __init__(self, largeur: int, hauteur: int) -> None:
+        self.hauteur = hauteur
+        self.largeur = largeur
+        # Obliger de faire ça plutôt que * pour éviter d'avoir tout le temps la même référence
+        self.carte = [[Case() for _ in range(largeur)] for _ in range(hauteur)] 
+
+    def reinitialiserMarquage(self):
+        for ligne in self.carte:
+            for case in ligne:
+                case.reinitialiser()
+
+    def calculerDistanceDepuis(self, objectif: Pos) -> None:
+        self.reinitialiserMarquage()
+
+        if not (0 <= objectif.x and objectif.x < self.largeur and 0 <= objectif.y and objectif.y < self.hauteur):
+            return
+
+        caseInit = self.carte[objectif.y][objectif.x]
+
+        file = File((objectif, 0))
+        caseInit.marquer()
+
+        types_obstacles = (Cellule.MUR, Cellule.ARMOIRE, Cellule.DICTIONNAIRE)
+
+        while not file.isEmpty():
+            posCourant, distCourant = file.pop()
+            self.carte[posCourant.y][posCourant.x].setDistance(distCourant)
+
+            voisins = [
+                posCourant.moveUp(),
+                posCourant.moveDown(),
+                posCourant.moveLeft(),
+                posCourant.moveRight()
+            ]
+
+            for p in voisins:
+                if 0 <= p.x < self.largeur and 0 <= p.y < self.hauteur:
+                    caseVoisine = self.carte[p.y][p.x]
+                    if caseVoisine.type not in types_obstacles and not caseVoisine.estParcouru:
+                        caseVoisine.marquer()
+                        file.add((p, distCourant + 1))
