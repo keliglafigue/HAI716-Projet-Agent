@@ -63,3 +63,6 @@ class File :
 
     def add(self, element):
         self.elements.append(element)
+
+    def isEmpty(self):
+        return len(self.elements) == 0
