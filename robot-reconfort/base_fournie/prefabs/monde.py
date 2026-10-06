@@ -10,7 +10,7 @@ class Monde:
 
     def __init__(self, carte:Dict[str, Any], dico:Dict[str, Any], armoire:Dict[str, Any]):
         self.pos_robot = Pos()
-        self.robot = Robot()
+        self.robot = Robot(Pos(0,0))
         self.dico = Dictionnaire(dico)
         self.carte = Carte(carte)
         self.armoire = Armoire(armoire)

@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Any, Dict
-from utils import Pos, File
+from prefabs.utils import Pos, File
 
 class Cellule(Enum) :
     MUR = 0

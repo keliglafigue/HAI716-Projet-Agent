@@ -43,6 +43,21 @@ VERSION_ATTENDUE = 1
 class ErreurFichier(Exception):
     """Fichier d'entree absent, illisible, ou d'un type inattendu."""
 
+class ErreurCarte(Exception):
+    """Erreur du format du fichier de carte fournie"""
+
+class ErreurCarteParamManquant(ErreurCarte):
+    def __init__(self, name:str):
+        super().__init__(f"Paramètre '{name}' manquant")
+
+class ErreurCarteMauvaisType(ErreurCarte):
+    def __init__(self, name:str, type:str):
+        super().__init__(f"Mauvais type du paramètre {name}, {type} attendu")
+
+class ErreurCarteParamInvalide(ErreurCarte):
+    def __init__(self, name:str, raison:str): 
+        super().__init__(f"Paramètre {name} invalide : {raison}")
+
 
 # ---------------------------------------------------------------------------
 # Lecture
@@ -108,7 +123,136 @@ def _lire_json(chemin: str | Path, format_attendu: str) -> Dict[str, Any]:
 
 def charger_carte(chemin: str | Path) -> Dict[str, Any]:
     """Charge un fichier carte. Voir l'enonce, section 5.1."""
-    return _lire_json(chemin, "robot-reconfort/carte")
+    carte = _lire_json(chemin, "robot-reconfort/carte")
+
+    # Nom
+    if not carte.get("nom"): raise ErreurCarteParamManquant("nom")
+    if not isinstance(carte.get("nom"), str): raise ErreurCarteMauvaisType("nom", "str")
+
+    # Dimension
+    dimensions = carte.get("dimensions")
+    if not dimensions: raise ErreurCarteParamManquant("dimensions")
+    if not isinstance(dimensions, dict): raise ErreurCarteMauvaisType("dimensions", "dict")
+    if "hauteur" not in dimensions: raise ErreurCarteParamManquant("hauteur")
+    if "largeur" not in dimensions: raise ErreurCarteParamManquant("largeur")
+
+    hauteur = dimensions.get("hauteur")
+    largeur = dimensions.get("largeur")
+    if not isinstance(hauteur, int): raise ErreurCarteMauvaisType("hauteur", "int")
+    if not isinstance(largeur, int): raise ErreurCarteMauvaisType("largeur", "int")
+    if hauteur <= 0: raise ErreurCarteParamInvalide("hauteur", "doit être supérieur à 0")
+    if largeur <= 0: raise ErreurCarteParamInvalide("largeur", "doit être supérieur à 0")
+
+    # Légende
+    legende = carte.get("legende")
+    if not legende: raise ErreurCarteParamManquant("legende")
+    if not isinstance(legende, dict): raise ErreurCarteMauvaisType("legende", "dict")
+
+    # TODO : A vérifier quelques cas, avec 2 fois les mêmes noms de paramètre etc
+    for symbole in legende.keys():
+        if not isinstance(symbole,str): raise ErreurCarteMauvaisType("legende", "dict(str, str)")
+    for case in legende.values():
+        if not isinstance(case,str): raise ErreurCarteMauvaisType("legende", "dict(str, str)")
+    for case in ["mur", "libre", "depart du robot", "armoire", "dictionnaire", "resident"]:
+        if case not in legende.values(): raise ErreurCarteParamManquant(f"legende['{case}']")
+    if len(legende.keys()) > 6: raise ErreurCarteParamInvalide("legende", "doit comporter uniquement les symboles nécessaires")
+        
+
+    # Grille
+    grille = carte.get("grille")
+    if not grille: raise ErreurCarteParamManquant("grille")
+    if not isinstance(grille, list): raise ErreurCarteMauvaisType("grille", "list")
+    if len(grille) != hauteur: raise ErreurCarteParamInvalide("grille", "le nombre de lignes doit être égal à la hauteur")
+
+    for i, ligne in enumerate(grille):
+        if not isinstance(ligne, str): raise ErreurCarteMauvaisType(f"grille[{i}]", "str")
+        if len(ligne) != largeur: raise ErreurCarteParamInvalide(f"grille[{i}]", "la longueur doit être égale à la largeur")
+
+        for symbole in ligne:
+            if symbole not in legende: raise ErreurCarteParamInvalide(f"grille[{i}]", f"symbole '{symbole}' absent de la légende")
+
+    # Départ du robot
+    depart_robot = carte.get("depart_robot")
+
+    if not depart_robot: raise ErreurCarteParamManquant("depart_robot")
+    if not isinstance(depart_robot, list): raise ErreurCarteMauvaisType("depart_robot", "list")
+    if len(depart_robot) != 2: raise ErreurCarteParamInvalide("depart_robot", "doit contenir exactement 2 coordonnées")
+
+    for i, coordonnee in enumerate(depart_robot):
+        if not isinstance(coordonnee, int): raise ErreurCarteMauvaisType(f"depart_robot[{i}]", "int")
+
+    if not (0 <= depart_robot[0] < hauteur): raise ErreurCarteParamInvalide("depart_robot", "la ligne est hors de la grille")
+    if not (0 <= depart_robot[1] < largeur): raise ErreurCarteParamInvalide("depart_robot", "la colonne est hors de la grille")
+
+    # Armoire
+    armoire = carte.get("armoire")
+
+    if not armoire: raise ErreurCarteParamManquant("armoire")
+    if not isinstance(armoire, dict): raise ErreurCarteMauvaisType("armoire", "dict")
+    if "position" not in armoire: raise ErreurCarteParamManquant("armoire.position")
+
+    position_armoire = armoire.get("position")
+
+    if not isinstance(position_armoire, list): raise ErreurCarteMauvaisType("armoire.position", "list")
+    if len(position_armoire) != 2: raise ErreurCarteParamInvalide("armoire.position", "doit contenir exactement 2 coordonnées")
+
+    for i, coordonnee in enumerate(position_armoire):
+        if not isinstance(coordonnee, int): raise ErreurCarteMauvaisType(f"armoire.position[{i}]","int")
+
+    if not (0 <= position_armoire[0] < hauteur): raise ErreurCarteParamInvalide("armoire.position", "la ligne est hors de la grille")
+    if not (0 <= position_armoire[1] < largeur): raise ErreurCarteParamInvalide("armoire.position", "la colonne est hors de la grille")
+
+    # Dictionnaire
+    dictionnaire = carte.get("dictionnaire")
+
+    if not dictionnaire:raise ErreurCarteParamManquant("dictionnaire")
+    if not isinstance(dictionnaire, dict):raise ErreurCarteMauvaisType("dictionnaire", "dict")
+    if "position" not in dictionnaire: raise ErreurCarteParamManquant("dictionnaire.position")
+
+    position_dictionnaire = dictionnaire.get("position")
+
+    if not isinstance(position_dictionnaire, list): raise ErreurCarteMauvaisType("dictionnaire.position", "list")
+    if len(position_dictionnaire) != 2: raise ErreurCarteParamInvalide("dictionnaire.position", "doit contenir exactement 2 coordonnées")
+
+    for i, coordonnee in enumerate(position_dictionnaire):
+        if not isinstance(coordonnee, int): raise ErreurCarteMauvaisType(f"dictionnaire.position[{i}]", "int")
+
+    if not (0 <= position_dictionnaire[0] < hauteur): raise ErreurCarteParamInvalide("dictionnaire.position", "la ligne est hors de la grille")
+    if not (0 <= position_dictionnaire[1] < largeur): raise ErreurCarteParamInvalide("dictionnaire.position", "la colonne est hors de la grille")
+
+    # Résident
+    residents = carte.get("residents")
+
+    if not residents: raise ErreurCarteParamManquant("residents")
+    if not isinstance(residents, list): raise ErreurCarteMauvaisType("residents", "list")
+
+    for i, resident in enumerate(residents):
+        if not isinstance(resident, dict): raise ErreurCarteMauvaisType(f"residents[{i}]", "dict")
+
+        # ID
+        if not resident.get("id"): raise ErreurCarteParamManquant(f"residents[{i}].id")
+        if not isinstance(resident.get("id"), str): raise ErreurCarteMauvaisType(f"residents[{i}].id","str")
+
+        # Nom
+        if not resident.get("nom"): raise ErreurCarteParamManquant(f"residents[{i}].nom")
+        if not isinstance(resident.get("nom"), str): raise ErreurCarteMauvaisType(f"residents[{i}].nom", "str")
+
+        # Position
+        if "position" not in resident: raise ErreurCarteParamManquant(f"residents[{i}].position")
+
+        position = resident.get("position")
+
+        if not isinstance(position, list): raise ErreurCarteMauvaisType(f"residents[{i}].position", "list")
+        if len(position) != 2: raise ErreurCarteParamInvalide(f"residents[{i}].position", "doit contenir exactement 2 coordonnées")
+
+        for j, coordonnee in enumerate(position):
+            if not isinstance(coordonnee, int): raise ErreurCarteMauvaisType(f"residents[{i}].position[{j}]", "int")
+
+        if not (0 <= position[0] < hauteur): raise ErreurCarteParamInvalide(f"residents[{i}].position", "la ligne est hors de la grille")
+        if not (0 <= position[1] < largeur): raise ErreurCarteParamInvalide(f"residents[{i}].position", "la colonne est hors de la grille")
+
+    #TODO : Vérifier que leur positions est unique et bien indiquée sur la carte, idem vérifier ques les identifiants sont uniques
+    return carte
 
 
 def charger_dictionnaire(chemin: str | Path) -> Dict[str, Any]:
