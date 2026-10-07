@@ -26,6 +26,7 @@ import json
 import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
+from prefabs.utils import Pos
 
 __all__ = [
     "ErreurFichier",
@@ -148,13 +149,12 @@ def charger_carte(chemin: str | Path) -> Dict[str, Any]:
     if not legende: raise ErreurCarteParamManquant("legende")
     if not isinstance(legende, dict): raise ErreurCarteMauvaisType("legende", "dict")
 
-    # TODO : A vérifier quelques cas, avec 2 fois les mêmes noms de paramètre etc
     for symbole in legende.keys():
         if not isinstance(symbole,str): raise ErreurCarteMauvaisType("legende", "dict(str, str)")
     for case in legende.values():
         if not isinstance(case,str): raise ErreurCarteMauvaisType("legende", "dict(str, str)")
     for case in ["mur", "libre", "depart du robot", "armoire", "dictionnaire", "resident"]:
-        if case not in legende.values(): raise ErreurCarteParamManquant(f"legende['{case}']")
+        if case not in legende.values(): raise ErreurCarteParamManquant(f"legende[*]='{case}']")
     if len(legende.keys()) > 6: raise ErreurCarteParamInvalide("legende", "doit comporter uniquement les symboles nécessaires")
         
 
@@ -162,11 +162,11 @@ def charger_carte(chemin: str | Path) -> Dict[str, Any]:
     grille = carte.get("grille")
     if not grille: raise ErreurCarteParamManquant("grille")
     if not isinstance(grille, list): raise ErreurCarteMauvaisType("grille", "list")
-    if len(grille) != hauteur: raise ErreurCarteParamInvalide("grille", "le nombre de lignes doit être égal à la hauteur")
+    if len(grille) != hauteur: raise ErreurCarteParamInvalide("grille", "le nombre de lignes doit être égal à la hauteur indiquée dans les dimensions")
 
     for i, ligne in enumerate(grille):
         if not isinstance(ligne, str): raise ErreurCarteMauvaisType(f"grille[{i}]", "str")
-        if len(ligne) != largeur: raise ErreurCarteParamInvalide(f"grille[{i}]", "la longueur doit être égale à la largeur")
+        if len(ligne) != largeur: raise ErreurCarteParamInvalide(f"grille[{i}]", "la longueur doit être égale à la largeur indiquée dans les dimensions")
 
         for symbole in ligne:
             if symbole not in legende: raise ErreurCarteParamInvalide(f"grille[{i}]", f"symbole '{symbole}' absent de la légende")
@@ -222,6 +222,8 @@ def charger_carte(chemin: str | Path) -> Dict[str, Any]:
 
     # Résident
     residents = carte.get("residents")
+    ids = []
+    positions = []
 
     if not residents: raise ErreurCarteParamManquant("residents")
     if not isinstance(residents, list): raise ErreurCarteMauvaisType("residents", "list")
@@ -232,6 +234,8 @@ def charger_carte(chemin: str | Path) -> Dict[str, Any]:
         # ID
         if not resident.get("id"): raise ErreurCarteParamManquant(f"residents[{i}].id")
         if not isinstance(resident.get("id"), str): raise ErreurCarteMauvaisType(f"residents[{i}].id","str")
+        if resident.get("id") in ids: raise ErreurCarteParamInvalide("residents.id", "les identifients doivent être uniques")
+        else : ids.append(resident.get("id"))
 
         # Nom
         if not resident.get("nom"): raise ErreurCarteParamManquant(f"residents[{i}].nom")
@@ -241,30 +245,33 @@ def charger_carte(chemin: str | Path) -> Dict[str, Any]:
         if "position" not in resident: raise ErreurCarteParamManquant(f"residents[{i}].position")
 
         position = resident.get("position")
-
         if not isinstance(position, list): raise ErreurCarteMauvaisType(f"residents[{i}].position", "list")
         if len(position) != 2: raise ErreurCarteParamInvalide(f"residents[{i}].position", "doit contenir exactement 2 coordonnées")
-
         for j, coordonnee in enumerate(position):
             if not isinstance(coordonnee, int): raise ErreurCarteMauvaisType(f"residents[{i}].position[{j}]", "int")
-
         if not (0 <= position[0] < hauteur): raise ErreurCarteParamInvalide(f"residents[{i}].position", "la ligne est hors de la grille")
         if not (0 <= position[1] < largeur): raise ErreurCarteParamInvalide(f"residents[{i}].position", "la colonne est hors de la grille")
 
-    #TODO : Vérifier que leur positions est unique et bien indiquée sur la carte, idem vérifier ques les identifiants sont uniques
+        pos = Pos(position[0], position[1])
+        for autre_pos in positions: 
+            if pos.equals(autre_pos): raise ErreurCarteParamInvalide("residents.position", "les positions doivent être uniques")
+        positions.append(pos)
+
+        if legende.get(grille[pos.x][pos.y]) != "resident": raise ErreurCarteParamInvalide(f"residents[{i}].position", "la position doit être indiquée sur la carte")
+
     return carte
 
-
+#TODO : Faire les vérifications du fichier
 def charger_dictionnaire(chemin: str | Path) -> Dict[str, Any]:
     """Charge un fichier dictionnaire. Voir l'enonce, section 5.2."""
     return _lire_json(chemin, "robot-reconfort/dictionnaire")
 
-
+#TODO : Faire les vérifications du fichier
 def charger_armoire(chemin: str | Path) -> Dict[str, Any]:
     """Charge un fichier armoire. Voir l'enonce, section 5.3."""
     return _lire_json(chemin, "robot-reconfort/armoire")
 
-
+#TODO : Faire les vérifications du fichier
 def charger_scenario(chemin: str | Path) -> Dict[str, Any]:
     """Charge un fichier scenario. Voir l'enonce, section 5.4."""
     return _lire_json(chemin, "robot-reconfort/scenario")

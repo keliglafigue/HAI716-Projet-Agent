@@ -48,6 +48,9 @@ class Pos:
             case Direction.O: return Pos(self.x+1, self.y)
             case Direction.E: return Pos(self.x-1, self.y)
 
+    def equals(self, pos:"Pos") -> bool:
+        return self.x == pos.x and self.y == pos.y
+
 # ATTENTION : Cette classe n'a pas encore été testée
 class File :
     # Programmée de façon peu optimale, a revoir ?

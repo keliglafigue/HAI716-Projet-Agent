@@ -10,9 +10,9 @@
     "#": "mur",
     ".": "libre",
     "R": "depart du robot",
-    "A": "armoire",
     "D": "dictionnaire",
-    "P": "resident"
+    "P": "resident",
+    "A": "armoire"
   },
   "grille": [
     "#############",
