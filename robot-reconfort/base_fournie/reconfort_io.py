@@ -80,6 +80,18 @@ class ErreurArmoireParamInvalide(ErreurArmoire):
     def __init__(self, name:str, raison:str): 
         super().__init__(f"Paramètre {name} invalide : {raison}")
 
+class ErreurScenario(Exception):
+    """Erreur du format du fichier de scenario fourni"""
+class ErreurScenarioParamManquant(ErreurScenario):
+    def __init__(self, name:str):
+        super().__init__(f"Paramètre '{name}' manquant")
+class ErreurScenarioMauvaisType(ErreurScenario):
+    def __init__(self, name:str, type:str):
+        super().__init__(f"Mauvais type du paramètre {name}, {type} attendu")
+class ErreurScenarioParamInvalide(ErreurScenario):
+    def __init__(self, name:str, raison:str): 
+        super().__init__(f"Paramètre {name} invalide : {raison}")
+
 # ---------------------------------------------------------------------------
 # Lecture
 # ---------------------------------------------------------------------------
@@ -335,7 +347,6 @@ def charger_dictionnaire(chemin: str | Path) -> Dict[str, Any]:
     
     return dictionnaire
 
-#TODO : Faire les vérifications du fichier
 def charger_armoire(chemin: str | Path) -> Dict[str, Any]:
     armoire = _lire_json(chemin, "robot-reconfort/armoire") 
     
@@ -397,8 +408,53 @@ def charger_armoire(chemin: str | Path) -> Dict[str, Any]:
 
 #TODO : Faire les vérifications du fichier
 def charger_scenario(chemin: str | Path) -> Dict[str, Any]:
-    """Charge un fichier scenario. Voir l'enonce, section 5.4."""
-    return _lire_json(chemin, "robot-reconfort/scenario")
+    """Charge un fichier scenario. Voir l'enonce, section 5.3."""
+    scenario = _lire_json(chemin, "robot-reconfort/scenario")
+
+    # Nom
+    if not scenario.get("nom"): raise ErreurScenarioParamManquant("nom")
+    if not isinstance(scenario.get("nom"), str): raise ErreurScenarioMauvaisType("nom", "str")
+
+    # Carte
+    carte = scenario.get("carte")
+    if not carte: raise ErreurScenarioParamManquant("carte")
+    if not isinstance(carte, str): raise ErreurScenarioMauvaisType("carte", "str")
+
+    # Armoire
+    armoire = scenario.get("armoire")
+    if not armoire: raise ErreurScenarioParamManquant("armoire")
+    if not isinstance(armoire, str): raise ErreurScenarioMauvaisType("armoire", "str")
+
+    # Demandes
+    demandes = scenario.get("demandes")
+    if "demandes" not in scenario: raise ErreurScenarioParamManquant("demandes")
+    if not isinstance(demandes, list): raise ErreurScenarioMauvaisType("demandes", "list")
+
+    numeros = []
+
+    for i, demande in enumerate(demandes):
+        if not isinstance(demande, dict): raise ErreurScenarioMauvaisType(f"demandes[{i}]", "dict")
+
+        # Numéro
+        if "numero" not in demande: raise ErreurScenarioParamManquant(f"demandes[{i}].numero")
+
+        numero = demande.get("numero")
+        if not isinstance(numero, int): raise ErreurScenarioMauvaisType(f"demandes[{i}].numero", "int")
+        if numero in numeros:raise ErreurScenarioParamInvalide(f"demandes[{i}].numero", "les numéros doivent être uniques")
+        numeros.append(numero)
+
+        # Résident
+        resident = demande.get("resident")
+        if not resident: raise ErreurScenarioParamManquant(f"demandes[{i}].resident")
+        if not isinstance(resident, str): raise ErreurScenarioMauvaisType(f"demandes[{i}].resident", "str")
+
+        # Message
+        message = demande.get("message")
+        if "message" not in demande: raise ErreurScenarioParamManquant(f"demandes[{i}].message")
+        if not isinstance(message, str): raise ErreurScenarioMauvaisType(f"demandes[{i}].message", "str")
+
+    return scenario
+
 
 
 # ---------------------------------------------------------------------------

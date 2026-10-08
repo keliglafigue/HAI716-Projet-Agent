@@ -27,6 +27,7 @@ def main(argv: list[str]) -> int:
     
     try:
         carte = rio.charger_carte(chemin_carte)
+        # TODO : vérifier si les noms des cartes et armoire correspondent à ceux dans le scénario
         scenario = rio.charger_scenario(chemin_scenario)
         dictionnaire = rio.charger_dictionnaire(dossier_donnees / "dictionnaire.json")
         armoire = rio.charger_armoire(dossier_donnees / f"{scenario['armoire']}.json")
@@ -35,6 +36,9 @@ def main(argv: list[str]) -> int:
         return 1
     except rio.ErreurCarte as err:
         print(f"erreur dans le fichier '{chemin_carte}' : {err}", file=sys.stderr)
+        return 1
+    except rio.ErreurScenario as err:
+        print(f"erreur dans le fichier '{chemin_scenario}' : {err}", file=sys.stderr)
         return 1
     except rio.ErreurDico as err:
         print(f"erreur dans le fichier '{dossier_donnees / "dictionnaire.json"}' : {err}", file=sys.stderr)
