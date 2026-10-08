@@ -45,21 +45,29 @@ class ErreurFichier(Exception):
     """Fichier d'entree absent, illisible, ou d'un type inattendu."""
 
 class ErreurCarte(Exception):
-    """Erreur du format du fichier de carte fournie"""
-
+    """Erreur du format du fichier de carte fourni"""
 class ErreurCarteParamManquant(ErreurCarte):
     def __init__(self, name:str):
         super().__init__(f"Paramètre '{name}' manquant")
-
 class ErreurCarteMauvaisType(ErreurCarte):
     def __init__(self, name:str, type:str):
         super().__init__(f"Mauvais type du paramètre {name}, {type} attendu")
-
 class ErreurCarteParamInvalide(ErreurCarte):
     def __init__(self, name:str, raison:str): 
         super().__init__(f"Paramètre {name} invalide : {raison}")
 
-
+class ErreurDico(Exception):
+    """Erreur du format du fichier de dictionnaire fourni"""
+class ErreurDicoParamManquant(ErreurDico):
+    def __init__(self, name:str):
+        super().__init__(f"Paramètre '{name}' manquant")
+class ErreurDicoMauvaisType(ErreurDico):
+    def __init__(self, name:str, type:str):
+        super().__init__(f"Mauvais type du paramètre {name}, {type} attendu")
+class ErreurDicoParamInvalide(ErreurDico):
+    def __init__(self, name:str, raison:str): 
+        super().__init__(f"Paramètre {name} invalide : {raison}")
+ 
 # ---------------------------------------------------------------------------
 # Lecture
 # ---------------------------------------------------------------------------
@@ -120,7 +128,6 @@ def _lire_json(chemin: str | Path, format_attendu: str) -> Dict[str, Any]:
         )
 
     return donnees
-
 
 def charger_carte(chemin: str | Path) -> Dict[str, Any]:
     """Charge un fichier carte. Voir l'enonce, section 5.1."""
@@ -261,10 +268,60 @@ def charger_carte(chemin: str | Path) -> Dict[str, Any]:
 
     return carte
 
-#TODO : Faire les vérifications du fichier
 def charger_dictionnaire(chemin: str | Path) -> Dict[str, Any]:
-    """Charge un fichier dictionnaire. Voir l'enonce, section 5.2."""
-    return _lire_json(chemin, "robot-reconfort/dictionnaire")
+    dictionnaire = _lire_json(chemin, "robot-reconfort/dictionnaire") 
+
+    # Nom 
+    if not dictionnaire.get("nom"): raise ErreurDicoParamManquant("nom") 
+    if not isinstance(dictionnaire.get("nom"), str): raise ErreurDicoMauvaisType("nom", "str") 
+    
+    # Emotions 
+    emotions = dictionnaire.get("emotions") 
+    if not emotions: raise ErreurDicoParamManquant("emotions") 
+    if not isinstance(emotions, list): raise ErreurDicoMauvaisType("emotions", "list") 
+    for i, emotion in enumerate(emotions): 
+        if not isinstance(emotion, str): raise ErreurDicoMauvaisType(f"emotions[{i}]", "str") 
+    for emo in ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]:
+            if emo not in emotions: raise ErreurCarteParamManquant(f"emotions[{emo}]")
+    if len(emotions) > 8: raise ErreurCarteParamInvalide("emotions", "doit contenir uniquement les émotions prédéfinies")
+    
+    # Intensités 
+    intensites = dictionnaire.get("intensites") 
+    if not intensites: raise ErreurDicoParamManquant("intensites") 
+    if not isinstance(intensites, list): raise ErreurDicoMauvaisType("intensites", "list") 
+    for i, intensite in enumerate(intensites): 
+        if not isinstance(intensite, str): raise ErreurDicoMauvaisType(f"intensites[{i}]", "str") 
+    for i in ["faible", "moyenne", "forte"]:
+        if i not in intensites: raise ErreurCarteParamManquant(f"intensites[{i}]")
+    if len(intensites) > 3: raise ErreurCarteParamInvalide("intensites", "doit contenir uniquement les intensités prédéfinies")
+        
+    # Entrées 
+    entrees = dictionnaire.get("entrees") 
+    if not entrees: raise ErreurDicoParamManquant("entrees") 
+    if not isinstance(entrees, list): raise ErreurDicoMauvaisType("entrees", "list") 
+    for i, entree in enumerate(entrees): 
+        if not isinstance(entree, dict): raise ErreurDicoMauvaisType(f"entrees[{i}]", "dict") 
+        
+        # Formes 
+        formes = entree.get("formes") 
+        if not formes: raise ErreurDicoParamManquant(f"entrees[{i}].formes") 
+        if not isinstance(formes, list): raise ErreurDicoMauvaisType(f"entrees[{i}].formes", "list") 
+        for j, forme in enumerate(formes): 
+            if not isinstance(forme, str): raise ErreurDicoMauvaisType( f"entrees[{i}].formes[{j}]", "str" ) 
+        
+        # Emotion 
+        emotion = entree.get("emotion") 
+        if not emotion: raise ErreurDicoParamManquant(f"entrees[{i}].emotion") 
+        if not isinstance(emotion, str): raise ErreurDicoMauvaisType( f"entrees[{i}].emotion", "str" ) 
+        if emotion not in emotions: raise ErreurDicoParamInvalide( f"entrees[{i}].emotion", "doit correspondre à une émotion présente dans la liste des émotions" ) 
+        
+        # Intensité 
+        intensite = entree.get("intensite") 
+        if not intensite: raise ErreurDicoParamManquant(f"entrees[{i}].intensite") 
+        if not isinstance(intensite, str): raise ErreurDicoMauvaisType( f"entrees[{i}].intensite", "str" ) 
+        if intensite not in intensites: raise ErreurDicoParamInvalide( f"entrees[{i}].intensite", "doit correspondre à une intensité présente dans la liste des intensités" ) 
+    
+    return dictionnaire
 
 #TODO : Faire les vérifications du fichier
 def charger_armoire(chemin: str | Path) -> Dict[str, Any]:

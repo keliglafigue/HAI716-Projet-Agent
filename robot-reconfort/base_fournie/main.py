@@ -36,6 +36,9 @@ def main(argv: list[str]) -> int:
     except rio.ErreurCarte as err:
         print(f"erreur dans le fichier '{chemin_carte}' : {err}", file=sys.stderr)
         return 1
+    except rio.ErreurDico as err:
+        print(f"erreur dans le fichier '{dossier_donnees / "dictionnaire.json"}' : {err}", file=sys.stderr)
+        return 1
 
     monde = Monde(carte, dictionnaire, armoire)
 
