@@ -67,7 +67,19 @@ class ErreurDicoMauvaisType(ErreurDico):
 class ErreurDicoParamInvalide(ErreurDico):
     def __init__(self, name:str, raison:str): 
         super().__init__(f"Paramètre {name} invalide : {raison}")
- 
+
+class ErreurArmoire(Exception):
+    """Erreur du format du fichier d'armoire fourni"""
+class ErreurArmoireParamManquant(ErreurArmoire):
+    def __init__(self, name:str):
+        super().__init__(f"Paramètre '{name}' manquant")
+class ErreurArmoireMauvaisType(ErreurArmoire):
+    def __init__(self, name:str, type:str):
+        super().__init__(f"Mauvais type du paramètre {name}, {type} attendu")
+class ErreurArmoireParamInvalide(ErreurArmoire):
+    def __init__(self, name:str, raison:str): 
+        super().__init__(f"Paramètre {name} invalide : {raison}")
+
 # ---------------------------------------------------------------------------
 # Lecture
 # ---------------------------------------------------------------------------
@@ -232,7 +244,7 @@ def charger_carte(chemin: str | Path) -> Dict[str, Any]:
     ids = []
     positions = []
 
-    if not residents: raise ErreurCarteParamManquant("residents")
+    if "residents" not in carte : raise ErreurCarteParamManquant("residents")
     if not isinstance(residents, list): raise ErreurCarteMauvaisType("residents", "list")
 
     for i, resident in enumerate(residents):
@@ -282,8 +294,8 @@ def charger_dictionnaire(chemin: str | Path) -> Dict[str, Any]:
     for i, emotion in enumerate(emotions): 
         if not isinstance(emotion, str): raise ErreurDicoMauvaisType(f"emotions[{i}]", "str") 
     for emo in ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]:
-            if emo not in emotions: raise ErreurCarteParamManquant(f"emotions[{emo}]")
-    if len(emotions) > 8: raise ErreurCarteParamInvalide("emotions", "doit contenir uniquement les émotions prédéfinies")
+            if emo not in emotions: raise ErreurDicoParamManquant(f"emotions[{emo}]")
+    if len(emotions) > 8: raise ErreurDicoParamInvalide("emotions", "doit contenir uniquement les émotions prédéfinies")
     
     # Intensités 
     intensites = dictionnaire.get("intensites") 
@@ -292,12 +304,12 @@ def charger_dictionnaire(chemin: str | Path) -> Dict[str, Any]:
     for i, intensite in enumerate(intensites): 
         if not isinstance(intensite, str): raise ErreurDicoMauvaisType(f"intensites[{i}]", "str") 
     for i in ["faible", "moyenne", "forte"]:
-        if i not in intensites: raise ErreurCarteParamManquant(f"intensites[{i}]")
-    if len(intensites) > 3: raise ErreurCarteParamInvalide("intensites", "doit contenir uniquement les intensités prédéfinies")
+        if i not in intensites: raise ErreurDicoParamManquant(f"intensites[{i}]")
+    if len(intensites) > 3: raise ErreurDicoParamInvalide("intensites", "doit contenir uniquement les intensités prédéfinies")
         
     # Entrées 
     entrees = dictionnaire.get("entrees") 
-    if not entrees: raise ErreurDicoParamManquant("entrees") 
+    if "entrees" not in dictionnaire : raise ErreurDicoParamManquant("entrees") 
     if not isinstance(entrees, list): raise ErreurDicoMauvaisType("entrees", "list") 
     for i, entree in enumerate(entrees): 
         if not isinstance(entree, dict): raise ErreurDicoMauvaisType(f"entrees[{i}]", "dict") 
@@ -325,8 +337,63 @@ def charger_dictionnaire(chemin: str | Path) -> Dict[str, Any]:
 
 #TODO : Faire les vérifications du fichier
 def charger_armoire(chemin: str | Path) -> Dict[str, Any]:
-    """Charge un fichier armoire. Voir l'enonce, section 5.3."""
-    return _lire_json(chemin, "robot-reconfort/armoire")
+    armoire = _lire_json(chemin, "robot-reconfort/armoire") 
+    
+    # Nom 
+    if not armoire.get("nom"): raise ErreurArmoireParamManquant("nom") 
+    if not isinstance(armoire.get("nom"), str): raise ErreurArmoireMauvaisType("nom", "str") 
+    
+    # Emotions 
+    emotions = armoire.get("emotions") 
+    if not emotions: raise ErreurArmoireParamManquant("emotions") 
+    if not isinstance(emotions, list): raise ErreurArmoireMauvaisType("emotions", "list") 
+    for i, emotion in enumerate(emotions): 
+        if not isinstance(emotion, str): raise ErreurArmoireMauvaisType(f"emotions[{i}]", "str") 
+    for emo in ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"]:
+            if emo not in emotions: raise ErreurArmoireParamManquant(f"emotions[{emo}]")
+    if len(emotions) > 8: raise ErreurArmoireParamInvalide("emotions", "doit contenir uniquement les émotions prédéfinies")
+    
+    # Intensités 
+    intensites = armoire.get("intensites") 
+    if not intensites: raise ErreurArmoireParamManquant("intensites") 
+    if not isinstance(intensites, list): raise ErreurArmoireMauvaisType("intensites", "list") 
+    for i, intensite in enumerate(intensites): 
+        if not isinstance(intensite, str): raise ErreurArmoireMauvaisType(f"intensites[{i}]", "str") 
+    for i in ["faible", "moyenne", "forte"]:
+        if i not in intensites: raise ErreurArmoireParamManquant(f"intensites[{i}]")
+    if len(intensites) > 3: raise ErreurArmoireParamInvalide("intensites", "doit contenir uniquement les intensités prédéfinies")
+
+    # Casier départ
+    casier_depart = armoire.get("casier_depart")
+    if not casier_depart: raise ErreurArmoireParamManquant("casier_depart")
+    if not isinstance(casier_depart, list): raise ErreurArmoireMauvaisType("casier_depart", "list")
+    for i, coord in enumerate(casier_depart):
+        if not isinstance(coord, int): raise ErreurArmoireMauvaisType(f"casier_depart[{i}]", "int")
+        if i >= 2 : raise ErreurArmoireParamInvalide("casier_depart", "doit contenir exactement 2 coordonnées")
+        max = (i == 0) if 2 else 7
+        if coord < 0 or coord > max: raise ErreurArmoireParamInvalide("casier_depart", f"casier_depart[{i}] doit être compris entre 0 et {max}")
+
+    # Casiers
+    casiers = armoire.get("casiers")
+    if not casiers: raise ErreurArmoireParamManquant("casiers")
+    if not isinstance(casiers, list) : raise ErreurArmoireParamManquant("casiers")
+    for i, casier in enumerate(casiers):
+        if not isinstance(casier, dict) : raise ErreurArmoireMauvaisType(f"casiers[{i}]", "dict")
+
+        # Ligne
+        ligne = casier.get("ligne")
+        if "ligne" not in casier : raise ErreurArmoireParamManquant(f"casiers[{i}][ligne]")
+        if not isinstance(ligne, int): raise ErreurArmoireMauvaisType(f"casiers[{i}][ligne]", "int")
+        if ligne < 0 or ligne > 2: raise ErreurCarteParamInvalide(f"casiers[{i}][ligne]", "doit être compris entre 0 et 2")
+
+        # Colonne
+        colonne = casier.get("colonne")
+        if "colonne" not in casier : raise ErreurArmoireParamManquant(f"casiers[{i}][colonne]")
+        if not isinstance(colonne, int): raise ErreurArmoireMauvaisType(f"casiers[{i}][colonne]", "int")
+        if colonne < 0 or colonne > 7: raise ErreurCarteParamInvalide(f"casiers[{i}][colonne]", "doit être compris entre 0 et 7")
+        
+
+    return armoire
 
 #TODO : Faire les vérifications du fichier
 def charger_scenario(chemin: str | Path) -> Dict[str, Any]:
