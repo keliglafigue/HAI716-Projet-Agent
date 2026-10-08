@@ -406,7 +406,6 @@ def charger_armoire(chemin: str | Path) -> Dict[str, Any]:
 
     return armoire
 
-#TODO : Faire les vérifications du fichier
 def charger_scenario(chemin: str | Path) -> Dict[str, Any]:
     """Charge un fichier scenario. Voir l'enonce, section 5.3."""
     scenario = _lire_json(chemin, "robot-reconfort/scenario")
