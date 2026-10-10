@@ -25,21 +25,21 @@ class Pos:
     def distanceTo(self, x, y) -> (int | float):
         return self.taxicabDistanceTo(x, y)
 
-    def moveLeft(self) -> tuple[(int | float), (int | float)]:
+    def moveLeft(self) -> Pos:
         self.x -= 1
-        return self.x, self.y
+        return self
 
-    def moveRight(self) -> tuple[(int | float), (int | float)]:
+    def moveRight(self) -> Pos:
         self.x += 1
-        return self.x, self.y
+        return self
     
-    def moveDown(self) -> tuple[(int | float), (int | float)]:
-        self.y -= 1
-        return self.x, self.y
-    
-    def moveUp(self) -> tuple[(int | float), (int | float)]:
+    def moveDown(self) -> Pos:
         self.y += 1
-        return self.x, self.y
+        return self
+    
+    def moveUp(self) -> Pos:
+        self.y -= 1
+        return self
     
     def move(self, dir:Direction) -> "Pos":
         match dir:

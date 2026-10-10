@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Any, Dict
-from prefabs.utils import Pos, File
+from prefabs.utils import Pos, File, Direction
 
 class Cellule(Enum) :
     MUR = 0
@@ -50,7 +50,7 @@ class Case:
     """
     def __init__(self):
         self.type = Cellule.LIBRE
-        self.distance = -1
+        self.distance = float('inf')
         self.estParcouru = False
 
     def changerType(self, nouveauType: Cellule):
@@ -78,17 +78,30 @@ class CarteRobot:
         self.hauteur = hauteur
         self.largeur = largeur
         # Obliger de faire ça plutôt que * pour éviter d'avoir tout le temps la même référence
-        self.carte = [[Case() for _ in range(largeur)] for _ in range(hauteur)] 
+        self.carte = [[Case() for _ in range(largeur)] for _ in range(hauteur)]
 
-    def reinitialiserMarquage(self):
+    def reinitialiserMarquage(self) -> None:
         for ligne in self.carte:
             for case in ligne:
                 case.reinitialiser()
 
+    def inBound(self, emplacement: Pos) -> None:
+        return (emplacement.x >= 0 and emplacement.x < self.largeur
+                and emplacement.y >= 0 and emplacement.y < self.hauteur)
+
+    def changerCase(self, emplacement: Pos, type: Cellule) -> None:
+        if not (self.inBound(emplacement)):
+            raise "Erreur : Position en dehors de la carte"
+        case = self.carte[emplacement.y][emplacement.x]
+        case.changerType(type)
+        if type is Cellule.MUR:
+            case.setDistance(float('inf'))
+
     def calculerDistanceDepuis(self, objectif: Pos) -> None:
+        # TODO : Rajouter des attributs pour actualiser les distances seulement si nécessaire
         self.reinitialiserMarquage()
 
-        if not (0 <= objectif.x and objectif.x < self.largeur and 0 <= objectif.y and objectif.y < self.hauteur):
+        if not (self.inBound(objectif)):
             return
 
         caseInit = self.carte[objectif.y][objectif.x]
@@ -96,7 +109,9 @@ class CarteRobot:
         file = File((objectif, 0))
         caseInit.marquer()
 
-        types_obstacles = (Cellule.MUR, Cellule.ARMOIRE, Cellule.DICTIONNAIRE)
+        # En fait faut peut être que le robot soit SUR la case étagère pour y accéder
+        # types_obstacles = (Cellule.MUR, Cellule.ARMOIRE, Cellule.DICTIONNAIRE)
+        types_obstacles = (Cellule.MUR)
 
         while not file.isEmpty():
             posCourant, distCourant = file.pop()
@@ -110,8 +125,26 @@ class CarteRobot:
             ]
 
             for p in voisins:
-                if 0 <= p.x < self.largeur and 0 <= p.y < self.hauteur:
+                if self.inBound(p):
                     caseVoisine = self.carte[p.y][p.x]
                     if caseVoisine.type not in types_obstacles and not caseVoisine.estParcouru:
                         caseVoisine.marquer()
                         file.add((p, distCourant + 1))
+
+    def getNextMove(self, depuis: Pos) -> (Direction | None):
+        voisins = [
+            (depuis.moveUp(), Direction.N),
+            (depuis.moveDown(), Direction.S)
+            (depuis.moveLeft(), Direction.E)
+            (depuis.moveRight(), Direction.O)
+        ]
+        meilleur = None
+
+        for (pos, dir) in voisins:
+            if not self.inBound(pos):
+                continue
+            case = self.carte[pos.y][pos.x]
+            if meilleur is None or case.distance < meilleur[1]:
+                meilleur = (dir, case.distance)
+
+        return meilleur[0] if meilleur is not None else None
