@@ -25,21 +25,35 @@ class Pos:
     def distanceTo(self, x, y) -> (int | float):
         return self.taxicabDistanceTo(x, y)
 
-    def moveLeft(self) -> Pos:
+    # Utiliser "moveX" pour déplacer la position actuelle
+    def moveOuest(self) -> Pos:
         self.x -= 1
         return self
 
-    def moveRight(self) -> Pos:
+    def moveEst(self) -> Pos:
         self.x += 1
         return self
     
-    def moveDown(self) -> Pos:
+    def moveSud(self) -> Pos:
         self.y += 1
         return self
     
-    def moveUp(self) -> Pos:
+    def moveNord(self) -> Pos:
         self.y -= 1
         return self
+
+    # Utiliser getX pour obtenir un nouvel emplacement sans modifier la position
+    def getNord(self) -> Pos:
+        return Pos(x = self.x, y = self.y - 1)
+
+    def getSud(self) -> Pos:
+        return Pos(x = self.x, y = self.y + 1)
+    
+    def getOuest(self) -> Pos:
+        return Pos(x = self.x - 1, y = self.y)
+    
+    def getEst(self) -> Pos:
+        return Pos(x = self.x + 1, y = self.y)
     
     def move(self, dir:Direction) -> "Pos":
         match dir:
@@ -50,6 +64,9 @@ class Pos:
 
     def equals(self, pos:"Pos") -> bool:
         return self.x == pos.x and self.y == pos.y
+
+    def __eq__(self, other):
+        return self.equals(other)
 
 # ATTENTION : Cette classe n'a pas encore été testée
 class File :

@@ -118,10 +118,10 @@ class CarteRobot:
             self.carte[posCourant.y][posCourant.x].setDistance(distCourant)
 
             voisins = [
-                posCourant.moveUp(),
-                posCourant.moveDown(),
-                posCourant.moveLeft(),
-                posCourant.moveRight()
+                posCourant.getUp(),
+                posCourant.getDown(),
+                posCourant.getLeft(),
+                posCourant.getRight()
             ]
 
             for p in voisins:
@@ -133,11 +133,12 @@ class CarteRobot:
 
     def getNextMove(self, depuis: Pos) -> (Direction | None):
         voisins = [
-            (depuis.moveUp(), Direction.N),
-            (depuis.moveDown(), Direction.S)
-            (depuis.moveLeft(), Direction.E)
-            (depuis.moveRight(), Direction.O)
+            (depuis.getNord(), Direction.N),
+            (depuis.getSud(), Direction.S)
+            (depuis.getOuest(), Direction.E)
+            (depuis.getEst(), Direction.O)
         ]
+        actuel = self.carte[depuis.y][depuis.x]
         meilleur = None
 
         for (pos, dir) in voisins:
@@ -147,4 +148,4 @@ class CarteRobot:
             if meilleur is None or case.distance < meilleur[1]:
                 meilleur = (dir, case.distance)
 
-        return meilleur[0] if meilleur is not None else None
+        return meilleur[0] if meilleur is not None and meilleur[1] < actuel.distance else None
