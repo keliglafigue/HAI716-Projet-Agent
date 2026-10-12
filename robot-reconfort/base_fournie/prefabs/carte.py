@@ -29,6 +29,12 @@ class Carte:
         self.hauteur = base_carte.get("dimensions").get("hauteur")
         self.largeur = base_carte.get("dimensions").get("largeur")
 
+        # Je viens d'apprendre que cette opérateur (*) permet de déballer les éléments d'une liste
+        # pour les passer en argument à une fonction, je trouve ça vachement cool
+        self.posArmoire = Pos(*base_carte.get("armoire").get("position"))
+        self.posDisco = Pos(*base_carte.get("dictionnaire").get("position"))
+        self.posDepartRobot = Pos(*base_carte.get("depart_robot"))
+
         legende = base_carte.get("legende")
         for string in base_carte.get("grille"):
             line = []
@@ -42,7 +48,30 @@ class Carte:
                     case 'resident' : line.append(Cellule.RESIDENT)
                     case _ : raise "Cellule inconnue dans la carte"
             self.carte.append(line)
+        
+        self.residents = {}
+        for resident in base_carte.get("residents"):
+            self.residents[resident.get("id")] = (resident.get("nom"), Pos(*resident.get("position")))
 
+    def getHauteur(self):
+        return self.hauteur
+
+    def getLargeur(self):
+        return self.largeur
+
+    # On s'assure de renvoyer une copie et non une référence
+    # Ce serait couillon que les meubles puissent se déplacer
+    def getPosArmoire(self):
+        return self.posArmoire.copy()
+
+    def getPosDico(self):
+        return self.posDisco.copy()
+
+    def getPosDepartRobot(self):
+        return self.posDepartRobot.copy()
+
+    def getPosResident(self, id: str):
+        return self.residents.get(id)[1].copy()
 
 class Case:
     """
@@ -63,6 +92,7 @@ class Case:
 
     def reinitialiser(self):
         self.estParcouru = False
+        self.distance = float('inf')
 
     def setDistance(self, n: int):
         if n < 0:
@@ -80,7 +110,7 @@ class CarteRobot:
         # Obliger de faire ça plutôt que * pour éviter d'avoir tout le temps la même référence
         self.carte = [[Case() for _ in range(largeur)] for _ in range(hauteur)]
 
-    def reinitialiserMarquage(self) -> None:
+    def reinitialiserCase(self) -> None:
         for ligne in self.carte:
             for case in ligne:
                 case.reinitialiser()
@@ -99,7 +129,7 @@ class CarteRobot:
 
     def calculerDistanceDepuis(self, objectif: Pos) -> None:
         # TODO : Rajouter des attributs pour actualiser les distances seulement si nécessaire
-        self.reinitialiserMarquage()
+        self.reinitialiserCase()
 
         if not (self.inBound(objectif)):
             return
@@ -134,8 +164,8 @@ class CarteRobot:
     def getNextMove(self, depuis: Pos) -> (Direction | None):
         voisins = [
             (depuis.getNord(), Direction.N),
-            (depuis.getSud(), Direction.S)
-            (depuis.getOuest(), Direction.E)
+            (depuis.getSud(), Direction.S),
+            (depuis.getOuest(), Direction.E),
             (depuis.getEst(), Direction.O)
         ]
         actuel = self.carte[depuis.y][depuis.x]
