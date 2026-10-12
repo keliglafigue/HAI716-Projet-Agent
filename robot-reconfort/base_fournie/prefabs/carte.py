@@ -29,11 +29,14 @@ class Carte:
         self.hauteur = base_carte.get("dimensions").get("hauteur")
         self.largeur = base_carte.get("dimensions").get("largeur")
 
-        # Je viens d'apprendre que cette opérateur (*) permet de déballer les éléments d'une liste
-        # pour les passer en argument à une fonction, je trouve ça vachement cool
-        self.posArmoire = Pos(*base_carte.get("armoire").get("position"))
-        self.posDisco = Pos(*base_carte.get("dictionnaire").get("position"))
-        self.posDepartRobot = Pos(*base_carte.get("depart_robot"))
+        yPosArmoire, xPosArmoire = base_carte.get("armoire").get("position")
+        self.posArmoire = Pos(xPosArmoire, yPosArmoire)
+
+        yPosDico, xPosDico = base_carte.get("dictionnaire").get("position")
+        self.posDisco = Pos(xPosDico, yPosDico)
+
+        yPosDepart, xPosDepart = base_carte.get("depart_robot")
+        self.posDepartRobot = Pos(xPosDepart, yPosDepart)
 
         legende = base_carte.get("legende")
         for string in base_carte.get("grille"):
@@ -72,6 +75,28 @@ class Carte:
 
     def getPosResident(self, id: str):
         return self.residents.get(id)[1].copy()
+
+    def inBound(self, coord: Pos) -> bool:
+        return 0 <= coord.x and coord.x < self.largeur and 0 <= coord.y and coord.y < self.hauteur
+
+    def getNeigboringCells(self, emplacement:Pos) -> tuple[(None | Cellule), (None | Cellule), (None | Cellule), (None | Cellule)]:
+        voisins = [
+            emplacement.getEst(),
+            emplacement.getNord(),
+            emplacement.getOuest(),
+            emplacement.getSud()
+        ]
+
+        res = []
+
+        for voisin in voisins:
+            if self.inBound(voisin):
+                res.append(self.carte[voisin.y][voisin.x])
+            else:
+                res.append(None)
+
+        return tuple(res)
+
 
 class Case:
     """
@@ -141,17 +166,17 @@ class CarteRobot:
 
         # En fait faut peut être que le robot soit SUR la case étagère pour y accéder
         # types_obstacles = (Cellule.MUR, Cellule.ARMOIRE, Cellule.DICTIONNAIRE)
-        types_obstacles = (Cellule.MUR)
+        types_obstacles = (Cellule.MUR,)
 
         while not file.isEmpty():
             posCourant, distCourant = file.pop()
             self.carte[posCourant.y][posCourant.x].setDistance(distCourant)
 
             voisins = [
-                posCourant.getUp(),
-                posCourant.getDown(),
-                posCourant.getLeft(),
-                posCourant.getRight()
+                posCourant.getNord(),
+                posCourant.getSud(),
+                posCourant.getEst(),
+                posCourant.getOuest()
             ]
 
             for p in voisins:

@@ -77,12 +77,10 @@ class Pos:
 # ATTENTION : Cette classe n'a pas encore été testée
 class File :
     # Programmée de façon peu optimale, a revoir ?
-    def __init__(self):
+    def __init__(self, element=None):
         self.elements = []
-
-    def __init__(self, element):
-        self.__init__()
-        self.elements.append(element)
+        if element is not None:
+            self.elements.append(element)
 
     def pop(self):
         return self.elements.pop(0);
