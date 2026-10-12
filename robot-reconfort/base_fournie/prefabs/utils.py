@@ -68,6 +68,12 @@ class Pos:
     def __eq__(self, other):
         return self.equals(other)
 
+    def __str__(self):
+        return "x: " + str(self.x) + ", y: " + str(self.y)
+
+    def copy(self) -> Pos:
+        return Pos(self.x, self.y)
+
 # ATTENTION : Cette classe n'a pas encore été testée
 class File :
     # Programmée de façon peu optimale, a revoir ?
