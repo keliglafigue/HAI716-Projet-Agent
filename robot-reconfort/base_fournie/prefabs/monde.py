@@ -12,6 +12,7 @@ class Monde:
         self.carte = Carte(carte)
         self.dico = Dictionnaire(dico)
         self.armoire = Armoire(armoire)
+        print(self.armoire.contenu.mat)
         self.pos_robot = self.carte.getPosDepartRobot()
         self.robot = Robot(self.carte.getLargeur(), self.carte.getHauteur(), self.carte.getPosArmoire(), self.carte.getPosDico())
 

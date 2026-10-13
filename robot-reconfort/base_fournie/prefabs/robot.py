@@ -56,6 +56,16 @@ class Robot:
         self.emotion = ("","")
         self.objet = ""
         self.carte = CarteRobot(largeur, hauteur)
+
+        # Initialisation de la mémoire de l'armoire
+        self.armoire = []
+        for i in range(8):
+            tab = []
+            for i in range(3):
+                tab.append("")
+            self.armoire.append(tab)
+        self.repli = 0 # Ré-initialisé à chaque nouvelle demande
+
         self.posArmoire = posArmoire
         self.posDico = posDico
         self.mission = None
@@ -65,6 +75,7 @@ class Robot:
 
     def nouvelleDemande(self, requete:str, posRendu: Pos):
         self.mission = (requete, posRendu)
+        self.repli = 0
 
     def _aller_vers(self, percu:Perception, emplacement: Pos):
         if percu.posRobot == emplacement:
@@ -94,12 +105,72 @@ class Robot:
         else :
             return self._aller_vers(percu, self.posDico)
 
+
     def _procedureArmoire(self, percu: Perception) -> Action:
         if percu.posRobot == self.posArmoire:
             # TODO: implémenter la stratégie de déplacement au sein de l'armoire
-            return Action.PRENDRE
+            case, objet = percu.caseArmoireRevele
+            self.armoire[case.x][case.y] = objet
+            goal = self._emotionToPos(percu.emotionRecupere, self.repli)
+
+            while repli < 15 and self.armoire[goal.x][goal.y] != "": # Itère dans l'armoire connu
+                if self.armoire[goal.x][goal.y] != None:
+                    if goal.equals(case) : return Action.PRENDRE
+                    return self._deplacementArmoire(case, goal)
+                repli += 1
+                if repli < 15 : goal = self._emotionToPos(percu.emotionRecupere, self.repli)
+
+            if repli > 15 : return Action.ATTENDRE # TODO : A changer par un abandon
+            
+            return self._deplacementArmoire(case, goal)
+
         else:
             return self._aller_vers(percu, self.posArmoire)
+
+    def _emotionToPos(self, emotion : tuple[str, str], repli:int) -> Pos:
+        x = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"].index(emotion[0])
+        y = ["faible", "moyenne", "forte"].index(emotion[1])
+
+        if repli == 0 : pass
+
+        elif repli <= 2: # On cherche les autres intensités de la même émotion
+            y = self._replyY(y, repli)
+
+        elif repli <= 5: # Casier 1 sup
+            decal = 1
+            x = (x + decal) % 8
+            y = self._replyY(y, repli - 2)
+
+        elif repli <= 8: # Casier 1 inf
+            decal = 1
+            x = (x - decal) % 8
+            y = self._replyY(y, repli - 5)
+
+        elif repli <= 11: # Casier sup 2
+            decal = 2
+            x = (x + decal) % 8
+            y = self._replyY(y, repli - 5)
+
+        else : # Casier inf 2
+            decal = 2
+            x = (x - decal) % 8
+            y = self._replyY(y, repli - 11)
+
+        
+        return Pos(x, y)
+
+    def _replyY(self, y:int, repli:int) -> int:
+        if repli == 0: return y
+        if y == 2 : return y - repli
+        elif y == 0 : return y + repli
+        else : return 0 if repli == 1 else 2
+
+    def _deplacementArmoire(self, depart:Pos, target:Pos) -> Action:
+        if target.x != depart.x: 
+            if (target.x - depart.x) % 8 > (depart.x - target.x) % 8 : return Action.CHERCHER_S
+            return Action.CHERCHER_N
+        if (target.y - depart.y) % 8 > (depart.y - target.y) : return Action.CHERCHER_E
+        return Action.CHERCHER_O
 
     def _procedureResident(self, percu: Perception) -> Action:
         if percu.posRobot == self.mission[1]:
