@@ -1,9 +1,9 @@
 from typing import Any, Dict, List
 
-from prefabs.utils import Pos
-from prefabs.robot import Robot, Perception
+from prefabs.utils import Pos, Direction
+from prefabs.robot import Robot, Perception, Action
 from prefabs.dictionnaire import Dictionnaire
-from prefabs.carte import Carte
+from prefabs.carte import Carte, Cellule
 from prefabs.armoire import Armoire
 
 class Monde:
@@ -15,27 +15,143 @@ class Monde:
         print(self.armoire.contenu.mat)
         self.pos_robot = self.carte.getPosDepartRobot()
         self.robot = Robot(self.carte.getLargeur(), self.carte.getHauteur(), self.carte.getPosArmoire(), self.carte.getPosDico())
-
+        self.percu = self.initPerception()
+        self.nextPercu = self.initPerception()
+        
     def initPerception(self) -> Perception:
         return Perception(
-            self.pos_robot,
+            self.pos_robot.copy(),
             self.carte.getNeigboringCells(self.pos_robot)
+        )
+
+    def _extraire_direction(self, action: Action) -> Direction:
+        match action:
+            case Action.AVANCER_N | Action.CHERCHER_N:
+                return Direction.N
+            case Action.AVANCER_S | Action.CHERCHER_S:
+                return Direction.S
+            case Action.AVANCER_E | Action.CHERCHER_E:
+                return Direction.E
+            case Action.AVANCER_O | Action.CHERCHER_O:
+                return Direction.O
+            case _:
+                raise AttributeError("Erreur : Une action dépourvu de direction a été transmis")
+
+    def _valider_avancer(self, dir: Direction) -> bool:
+        pos = self.pos_robot.copy()
+        match dir:
+            case Direction.N:
+                pos = pos.getNord()
+            case Direction.S:
+                pos = pos.getSud()
+            case Direction.E:
+                pos = pos.getEst()
+            case Direction.O:
+                pos = pos.getOuest()
+
+        case = self.carte.getCellule(pos)
+        if case != Cellule.LIBRE:
+            raise Exception("Erreur : Tentative de déplacement sur une cellule non libre")
+
+        return True
+
+    def _valider_chercher(self, dir: Direction) -> bool:
+        # A côté de l'armoire
+        pos_rob = self.pos_robot.copy()
+        pos_armoire = self.carte.getPosArmoire()
+        if pos_rob.taxicabDistanceTo(pos_armoire.x, pos_armoire.y) != 1:
+            raise Exception("Erreur : Le robot n'est pas à côté de l'armoire")
+            # return False
+        # On "cycle" sur la largeur
+        if dir in (Direction.E, Direction.O):
+            return True
+        # Mais pas sur la hauteur
+        if dir == Direction.N and self.armoire.getPosSelecteur().y == 0:
+            raise Exception("Erreur : le curseur est déjà tout en haut")
+        if dir == Direction.S and self.armoire.getPosSelecteur().y == 2:
+            raise Exception("Erreur : le curseur est déjà tout en bas")
+        return True
+
+    def _valider_consulter(self) -> bool:
+        pos_rob = self.pos_robot.copy()
+        pos_dico = self.carte.getPosDico()
+        return pos_rob.taxicabDistanceTo(pos_dico.x, pos_dico.y) == 1
+
+    def _valider_prendre(self) -> bool:
+        pos_rob = self.pos_robot.copy()
+        pos_armoire = self.carte.getPosArmoire()
+        if pos_rob.taxicabDistanceTo(pos_armoire.x, pos_armoire.y) != 1:
+            raise Exception("Erreur : le robot n'est pas à côté de l'armoire")
+            # return False
+        if self.robot.isObjetTenu():
+            raise Exception("Erreur : le robot tient déjà un objet")
+            # return False
+        if self.armoire.regarderObjet() == "":
+            raise Exception("Erreur : la case ne contient pas d'objet")
+            # return False
+        return True
+
+    def valider_action(self, action: Action) -> bool:
+        match action:
+            case Action.ATTENDRE:
+                return True
+            case Action.AVANCER_N | Action.AVANCER_S | Action.AVANCER_E | Action.AVANCER_O:
+                dir = self._extraire_direction(action)
+                return self._valider_avancer(dir)
+            case Action.CHERCHER_N | Action.CHERCHER_S | Action.CHERCHER_E | Action.CHERCHER_O:
+                dir = self._extraire_direction(action)
+                return self._valider_chercher(dir)
+            case Action.CONSULTER:
+                return self._valider_consulter()
+            case Action.PRENDRE:
+                return self._valider_prendre()
+            case Action.DONNER:
+                raise Exception("Erreur : non implémenté (valider_action)")
+                # Vérifier que le robot porte un objet ET bonne case
+
+    def executer_action(self, action: Action) -> None:
+        match action:
+            case Action.ATTENDRE:
+                pass
+            case Action.AVANCER_N | Action.AVANCER_S | Action.AVANCER_E | Action.AVANCER_O:
+                dir = self._extraire_direction(action)
+                self.pos_robot.move(dir)
+            case Action.CHERCHER_N | Action.CHERCHER_S | Action.CHERCHER_E | Action.CHERCHER_O:
+                dir = self._extraire_direction(action)
+                self.armoire.deplacerSelecteur(dir)
+                objetVu = self.armoire.regarderObjet()
+                self.nextPercu.caseArmoireRevele = objetVu
+            case Action.CONSULTER:
+                req = self.robot.getCurrentRequest()
+                emotion = self.dico.recuperEmotion(req)
+                self.nextPercu.emotionRecupere = emotion
+            case Action.PRENDRE:
+                self.robot.objet = self.armoire.obtenirObjet()
+            case Action.DONNER:
+                raise Exception("Erreur : non implémenté (executer_action)")
+                # Lacher l'objet et retirer la mission au robot ?
+
+    def update_perception(self):
+        self.percu = Perception(
+            self.pos_robot.copy(),
+            self.carte.getNeigboringCells(self.pos_robot),
+            self.nextPercu.caseArmoireRevele,
+            self.nextPercu.emotionRecupere
         )
 
     def executer_requete(self, requete: Dict[str, Any]) -> None:
         if self.robot.isTacheEnCours():
-            raise "Houlala"
+            raise Exception("")
 
         message = requete.get("message")
         posResident = self.carte.getPosResident(requete.get("resident"))
         self.robot.nouvelleDemande(message, posResident)
 
-        percu = self.initPerception()
-        
         while self.robot.isTacheEnCours():
-            action = self.robot.executerPas(percu) # Les paramètres nécessaire à l'exécution seront passés en paramètre
-            """
-            vérifier action valide
-            exécuter action
-            mettre perception à jour
-            """
+            action = self.robot.executerPas(self.percu) # Les paramètres nécessaire à l'exécution seront passés en paramètre
+            if self.valider_action(action):
+                self.executer_action(action)
+            else: 
+                raise Exception("Erreur : l'action ", action, " n'est pas autorisée dans ce contexte")
+
+            self.update_perception()
