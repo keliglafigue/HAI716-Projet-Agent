@@ -48,6 +48,9 @@ class Action(Enum):
 
     ATTENDRE = 11
 
+    def __str__(self):
+        return self.name
+
 class Robot:
     """
     Classe de l'agent
@@ -190,7 +193,7 @@ class Robot:
             self.carte.changerCase(percu.posRobot.getEst(), percu.celluleE)
 
         if percu.celluleO is not None:
-            self.carte.changerCase(percu.posRobot.getNord(), percu.celluleO)
+            self.carte.changerCase(percu.posRobot.getOuest(), percu.celluleO)
 
         if percu.emotionRecupere is not None:
             self.emotion = percu.emotionRecupere
@@ -216,3 +219,9 @@ class Robot:
     def reset(self):
         self.mission = None
         self.emotion = ("", "")
+
+    def isObjetTenu(self) -> bool:
+        return self.objet != ""
+
+    def getCurrentRequest(self) -> str:
+        return self.mission[0]

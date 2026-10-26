@@ -97,6 +97,12 @@ class Carte:
 
         return tuple(res)
 
+    def getCellule(self, pos: Pos) -> Cellule:
+        if self.inBound(pos):
+            return self.carte[pos.y][pos.x]
+        else:
+            raise AttributeError("Erreur : la case demandé est hors des limites de la grille")
+
 
 class Case:
     """

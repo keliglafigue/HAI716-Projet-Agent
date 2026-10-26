@@ -55,12 +55,19 @@ class Pos:
     def getEst(self) -> Pos:
         return Pos(x = self.x + 1, y = self.y)
     
-    def move(self, dir:Direction) -> "Pos":
+    def move_copy(self, dir:Direction) -> "Pos":
         match dir:
-            case Direction.N: return Pos(self.x, self.y+1)
-            case Direction.S: return Pos(self.x, self.y-1)
-            case Direction.O: return Pos(self.x+1, self.y)
-            case Direction.E: return Pos(self.x-1, self.y)
+            case Direction.N: return Pos(self.x, self.y-1)
+            case Direction.S: return Pos(self.x, self.y+1)
+            case Direction.O: return Pos(self.x-1, self.y)
+            case Direction.E: return Pos(self.x+1, self.y)
+
+    def move(self, dir:Direction) -> Pos:
+        match dir:
+            case Direction.N: self.moveNord()
+            case Direction.S: self.moveSud()
+            case Direction.E: self.moveEst()
+            case Direction.O: self.moveOuest()
 
     def equals(self, pos:"Pos") -> bool:
         return self.x == pos.x and self.y == pos.y

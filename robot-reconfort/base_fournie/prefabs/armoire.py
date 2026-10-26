@@ -27,7 +27,7 @@ class Armoire:
         self.contenu = contenuArmoire(3, 8, mat)
     
     def deplacerSelecteur(self, dir:Direction):
-        new_pos = self.pos_selecteur.move(dir)
+        new_pos = self.pos_selecteur.move_copy(dir)
         if new_pos.x > 7 : new_pos.x = 0
         if new_pos.x < 0 : new_pos.x = 7
         if new_pos.y > 2 or new_pos.y < 0: raise "Armoire : Deplacement du selecteur hors des limites"
@@ -42,3 +42,5 @@ class Armoire:
         self.contenu.supprimerObjet(self.pos_selecteur)
         return obj
 
+    def getPosSelecteur(self) -> Pos:
+        return self.pos_selecteur.copy()
