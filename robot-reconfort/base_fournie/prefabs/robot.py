@@ -76,8 +76,8 @@ class Robot:
     def isTacheEnCours(self) -> bool:
         return self.mission is not None
 
-    def nouvelleDemande(self, requete:str, posRendu: Pos):
-        self.mission = (requete, posRendu)
+    def nouvelleDemande(self, requete:str, posRendu: Pos, idResident: str):
+        self.mission = (requete, posRendu, idResident)
         self.repli = 0
 
     def _aller_vers(self, percu:Perception, emplacement: Pos):
@@ -225,12 +225,23 @@ class Robot:
     def reset(self):
         self.mission = None
         self.emotion = ("", "")
+        self.objet = ""
+        self.repli = 0
 
     def isObjetTenu(self) -> bool:
         return self.objet != ""
 
     def getCurrentRequest(self) -> str:
-        return self.mission[0]
+        if self.isTacheEnCours():
+            return self.mission[0]
+        else:
+            raise Exception("Erreur : Aucune requête en cours pour le robot")
+
+    def getWhoMadeRequest(self):
+        if self.isTacheEnCours():
+            return self.mission[2]
+        else:
+            raise Exception("Erreur : Aucune requête en cours pour le robot")
 
     def __str__(self):
         return str(self.carte)

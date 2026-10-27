@@ -91,6 +91,15 @@ class Monde:
             # return False
         return True
 
+    def _valider_donner(self):
+        if not self.robot.isObjetTenu():
+            raise Exception("Erreur : le robot ne tient aucun objet")
+        idRes = self.robot.getWhoMadeRequest()
+        posRes = self.carte.getPosResident(idRes)
+        if self.pos_robot.taxicabDistanceTo(posRes.x, posRes.y) != 1:
+            raise Exception("Erreur : le robot n'est pas à côté du bon résident")
+        return True
+
     def valider_action(self, action: Action) -> bool:
         match action:
             case Action.ATTENDRE:
@@ -106,8 +115,7 @@ class Monde:
             case Action.PRENDRE:
                 return self._valider_prendre()
             case Action.DONNER:
-                raise Exception("Erreur : non implémenté (valider_action)")
-                # Vérifier que le robot porte un objet ET bonne case
+                return self._valider_donner()
 
     def executer_action(self, action: Action) -> None:
         match action:
@@ -126,8 +134,7 @@ class Monde:
             case Action.PRENDRE:
                 self.robot.objet = self.armoire.obtenirObjet()
             case Action.DONNER:
-                raise Exception("Erreur : non implémenté (executer_action)")
-                # Lacher l'objet et retirer la mission au robot ?
+                self.robot.reset()
 
     def update_perception(self):
         pos_arm = self.carte.getPosArmoire()
@@ -147,7 +154,7 @@ class Monde:
 
         message = requete.get("message")
         posResident = self.carte.getPosResident(requete.get("resident"))
-        self.robot.nouvelleDemande(message, posResident)
+        self.robot.nouvelleDemande(message, posResident, requete.get("resident"))
 
         while self.robot.isTacheEnCours():
             print(self)
