@@ -119,8 +119,6 @@ class Monde:
             case Action.CHERCHER_N | Action.CHERCHER_S | Action.CHERCHER_E | Action.CHERCHER_O:
                 dir = self._extraire_direction(action)
                 self.armoire.deplacerSelecteur(dir)
-                objetVu = self.armoire.regarderObjet()
-                self.nextPercu.caseArmoireRevele = objetVu
             case Action.CONSULTER:
                 req = self.robot.getCurrentRequest()
                 emotion = self.dico.recuperEmotion(req)
@@ -132,22 +130,28 @@ class Monde:
                 # Lacher l'objet et retirer la mission au robot ?
 
     def update_perception(self):
+        pos_arm = self.carte.getPosArmoire()
+        if self.pos_robot.taxicabDistanceTo(pos_arm.x, pos_arm.y) == 1:
+            self.nextPercu.caseArmoireRevele = (self.armoire.getPosSelecteur(), self.armoire.regarderObjet())
         self.percu = Perception(
             self.pos_robot.copy(),
             self.carte.getNeigboringCells(self.pos_robot),
             self.nextPercu.caseArmoireRevele,
             self.nextPercu.emotionRecupere
         )
+        self.nextPercu = self.initPerception()
 
     def executer_requete(self, requete: Dict[str, Any]) -> None:
         if self.robot.isTacheEnCours():
-            raise Exception("")
+            raise Exception("Erreur : Une requête est déjà en cours d'exécution sur ce robot")
 
         message = requete.get("message")
         posResident = self.carte.getPosResident(requete.get("resident"))
         self.robot.nouvelleDemande(message, posResident)
 
         while self.robot.isTacheEnCours():
+            print(self)
+
             action = self.robot.executerPas(self.percu) # Les paramètres nécessaire à l'exécution seront passés en paramètre
             if self.valider_action(action):
                 self.executer_action(action)
@@ -155,3 +159,16 @@ class Monde:
                 raise Exception("Erreur : l'action ", action, " n'est pas autorisée dans ce contexte")
 
             self.update_perception()
+
+    def __str__(self):
+        res = str(self.carte)
+        pos = self.pos_robot.y * (self.carte.getLargeur() + 1) + self.pos_robot.x
+
+        res = res[:pos] + "@" + res[pos+1:]
+
+        res += "\nPos robot : " + str(self.pos_robot)
+        res += "\nCurseur Armoire : " + str(self.armoire.getPosSelecteur())
+        res += "\nObjet tenu : " + str(self.robot.objet)
+        res += "\nMission actuel : " + str(self.robot.mission)
+
+        return res

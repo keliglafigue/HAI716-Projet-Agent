@@ -84,7 +84,7 @@ class Robot:
         if percu.posRobot == emplacement:
             # Peut être remplacer par
             # return Action.ATTENDRE
-            raise "Erreur : Demande de déplacement alors qu'on est déjà présent"
+            raise Exception("Erreur : Demande de déplacement alors qu'on est déjà présent")
 
         self.carte.calculerDistanceDepuis(emplacement)
 
@@ -92,7 +92,7 @@ class Robot:
 
         match dir:
             case None:
-                raise "Erreur : Emplacement inaccessible"
+                raise Exception("Erreur : Emplacement inaccessible")
             case Direction.N:
                 return Action.AVANCER_N
             case Direction.S:
@@ -103,27 +103,28 @@ class Robot:
                 return Action.AVANCER_O
 
     def _procedureEmotion(self, percu: Perception) -> Action:
-        if percu.posRobot == self.posDico:
+        if percu.posRobot.taxicabDistanceTo(self.posDico.x, self.posDico.y) == 1:
             return Action.CONSULTER
         else :
             return self._aller_vers(percu, self.posDico)
 
 
+    # Il faut surement passer self.emotion plutot que percu.emotionRecupere
     def _procedureArmoire(self, percu: Perception) -> Action:
-        if percu.posRobot == self.posArmoire:
+        if percu.posRobot.taxicabDistanceTo(self.posArmoire.x, self.posArmoire.y) == 1:
             # TODO: implémenter la stratégie de déplacement au sein de l'armoire
             case, objet = percu.caseArmoireRevele
             self.armoire[case.x][case.y] = objet
-            goal = self._emotionToPos(percu.emotionRecupere, self.repli)
+            goal = self._emotionToPos(self.emotion, self.repli)
 
-            while repli < 15 and self.armoire[goal.x][goal.y] != "": # Itère dans l'armoire connu
+            while self.repli < 15 and self.armoire[goal.x][goal.y] != "": # Itère dans l'armoire connu
                 if self.armoire[goal.x][goal.y] != None:
                     if goal.equals(case) : return Action.PRENDRE
                     return self._deplacementArmoire(case, goal)
-                repli += 1
-                if repli < 15 : goal = self._emotionToPos(percu.emotionRecupere, self.repli)
+                self.repli += 1
+                if self.repli < 15 : goal = self._emotionToPos(self.emotion, self.repli)
 
-            if repli > 15 : return Action.ATTENDRE # TODO : A changer par un abandon
+            if self.repli > 15 : return Action.ATTENDRE # TODO : A changer par un abandon
             
             return self._deplacementArmoire(case, goal)
 
@@ -169,14 +170,19 @@ class Robot:
         else : return 0 if repli == 1 else 2
 
     def _deplacementArmoire(self, depart:Pos, target:Pos) -> Action:
-        if target.x != depart.x: 
-            if (target.x - depart.x) % 8 > (depart.x - target.x) % 8 : return Action.CHERCHER_S
+        dx = (target.x - depart.x) % 8
+
+        if dx != 0:
+            if dx <= 4:
+                return Action.CHERCHER_E
+            return Action.CHERCHER_O
+
+        if target.y < depart.y:
             return Action.CHERCHER_N
-        if (target.y - depart.y) % 8 > (depart.y - target.y) : return Action.CHERCHER_E
-        return Action.CHERCHER_O
+        return Action.CHERCHER_S
 
     def _procedureResident(self, percu: Perception) -> Action:
-        if percu.posRobot == self.mission[1]:
+        if percu.posRobot.taxicabDistanceTo(self.mission[1].x, self.mission[1].y) == 1 :
             return Action.DONNER
         else:
             return self._aller_vers(percu, self.mission[1])
@@ -225,3 +231,6 @@ class Robot:
 
     def getCurrentRequest(self) -> str:
         return self.mission[0]
+
+    def __str__(self):
+        return str(self.carte)

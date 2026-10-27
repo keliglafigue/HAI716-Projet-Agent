@@ -30,7 +30,7 @@ class Armoire:
         new_pos = self.pos_selecteur.move_copy(dir)
         if new_pos.x > 7 : new_pos.x = 0
         if new_pos.x < 0 : new_pos.x = 7
-        if new_pos.y > 2 or new_pos.y < 0: raise "Armoire : Deplacement du selecteur hors des limites"
+        if new_pos.y > 2 or new_pos.y < 0: raise Exception("Armoire : Deplacement du selecteur hors des limites")
         self.pos_selecteur = new_pos
     
     def regarderObjet(self) -> str:
@@ -38,7 +38,7 @@ class Armoire:
     
     def obtenirObjet(self) -> str:
         obj = self.contenu.regarderObjet(self.pos_selecteur)
-        if not obj : raise "Pas d'objet à cette position"
+        if not obj : raise Exception("Pas d'objet à cette position")
         self.contenu.supprimerObjet(self.pos_selecteur)
         return obj
 

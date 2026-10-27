@@ -18,7 +18,7 @@ class Dictionnaire:
             emotion = o.get("emotion")
             intensité = o.get("intensite")
             if not (entrees and emotion and intensité): # Erreur très basique, certainement à compléter et préciser
-                raise "Erreur de format du dictionnaire"
+                raise Exception("Erreur de format du dictionnaire")
             for e in entrees:
                 self.dico[e] = [emotion, intensité]
 

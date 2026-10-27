@@ -3,11 +3,11 @@ from typing import Any, Dict
 from prefabs.utils import Pos, File, Direction
 
 class Cellule(Enum) :
-    MUR = 0
-    LIBRE = 1
-    ARMOIRE = 2
-    DICTIONNAIRE = 3
-    RESIDENT = 4
+    MUR = "#"
+    LIBRE = " "
+    ARMOIRE = "A"
+    DICTIONNAIRE = "D"
+    RESIDENT = "R"
 
 
 class Carte:
@@ -49,12 +49,12 @@ class Carte:
                     case 'armoire' : line.append(Cellule.ARMOIRE)
                     case 'dictionnaire' : line.append(Cellule.DICTIONNAIRE)
                     case 'resident' : line.append(Cellule.RESIDENT)
-                    case _ : raise "Cellule inconnue dans la carte"
+                    case _ : raise Exception("Cellule inconnue dans la carte")
             self.carte.append(line)
         
         self.residents = {}
         for resident in base_carte.get("residents"):
-            self.residents[resident.get("id")] = (resident.get("nom"), Pos(*resident.get("position")))
+            self.residents[resident.get("id")] = (resident.get("nom"), Pos(resident.get("position")[1], resident.get("position")[0]))
 
     def getHauteur(self):
         return self.hauteur
@@ -103,6 +103,13 @@ class Carte:
         else:
             raise AttributeError("Erreur : la case demandé est hors des limites de la grille")
 
+    def __str__(self):
+        res = ""
+        for y in range(self.hauteur):
+            for x in range(self.largeur):
+                res += self.carte[y][x].value
+            res += "\n"
+        return res
 
 class Case:
     """
@@ -118,7 +125,7 @@ class Case:
 
     def marquer(self):
         if self.estParcouru: 
-            raise "Erreur: Marquage d'une case déjà marqué"
+            raise Exception("Erreur: Marquage d'une case déjà marqué")
         self.estParcouru = True
 
     def reinitialiser(self):
@@ -127,9 +134,11 @@ class Case:
 
     def setDistance(self, n: int):
         if n < 0:
-            raise "Erreur: distance négative affecté à une case"
+            raise Exception("Erreur: distance négative affecté à une case")
         self.distance = n
 
+    def __str__(self):
+        return self.type.value
 
 class CarteRobot:
     """
@@ -152,7 +161,7 @@ class CarteRobot:
 
     def changerCase(self, emplacement: Pos, type: Cellule) -> None:
         if not (self.inBound(emplacement)):
-            raise "Erreur : Position en dehors de la carte"
+            raise Exception("Erreur : Position en dehors de la carte")
         case = self.carte[emplacement.y][emplacement.x]
         case.changerType(type)
         if type is Cellule.MUR:
@@ -171,8 +180,9 @@ class CarteRobot:
         caseInit.marquer()
 
         # En fait faut peut être que le robot soit SUR la case étagère pour y accéder
-        # types_obstacles = (Cellule.MUR, Cellule.ARMOIRE, Cellule.DICTIONNAIRE)
-        types_obstacles = (Cellule.MUR,)
+        # types_obstacles = (Cellule.MUR,)
+        # En fait non 
+        types_obstacles = (Cellule.MUR, Cellule.ARMOIRE, Cellule.DICTIONNAIRE, Cellule.RESIDENT)
 
         while not file.isEmpty():
             posCourant, distCourant = file.pop()
@@ -196,8 +206,8 @@ class CarteRobot:
         voisins = [
             (depuis.getNord(), Direction.N),
             (depuis.getSud(), Direction.S),
-            (depuis.getOuest(), Direction.E),
-            (depuis.getEst(), Direction.O)
+            (depuis.getOuest(), Direction.O),
+            (depuis.getEst(), Direction.E)
         ]
         actuel = self.carte[depuis.y][depuis.x]
         meilleur = None
@@ -210,3 +220,11 @@ class CarteRobot:
                 meilleur = (dir, case.distance)
 
         return meilleur[0] if meilleur is not None and meilleur[1] < actuel.distance else None
+
+    def __str__(self):
+        res = ""
+        for y in range(self.hauteur):
+            for x in range(self.largeur):
+                res += str(self.carte[y][x])
+            res += '\n'
+        return res
