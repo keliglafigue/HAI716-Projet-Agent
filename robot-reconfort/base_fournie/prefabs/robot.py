@@ -51,6 +51,12 @@ class Action(Enum):
     def __str__(self):
         return self.name
 
+class Repli(Enum):
+    AUCUN = 0
+    INTENSITE = 1
+    VOISINE_1 = 2
+    VOISINE_2 = 3
+
 class Robot:
     """
     Classe de l'agent
@@ -65,9 +71,9 @@ class Robot:
         for i in range(8):
             tab = []
             for i in range(3):
-                tab.append("")
+                tab.append(None)
             self.armoire.append(tab)
-        self.repli = 0 # Ré-initialisé à chaque nouvelle demande
+        self.repli = Repli.AUCUN
 
         self.posArmoire = posArmoire
         self.posDico = posDico
@@ -78,7 +84,6 @@ class Robot:
 
     def nouvelleDemande(self, requete:str, posRendu: Pos, idResident: str):
         self.mission = (requete, posRendu, idResident)
-        self.repli = 0
 
     def _aller_vers(self, percu:Perception, emplacement: Pos):
         if percu.posRobot == emplacement:
@@ -108,67 +113,6 @@ class Robot:
         else :
             return self._aller_vers(percu, self.posDico)
 
-
-    # Il faut surement passer self.emotion plutot que percu.emotionRecupere
-    def _procedureArmoire(self, percu: Perception) -> Action:
-        if percu.posRobot.taxicabDistanceTo(self.posArmoire.x, self.posArmoire.y) == 1:
-            # TODO: implémenter la stratégie de déplacement au sein de l'armoire
-            case, objet = percu.caseArmoireRevele
-            self.armoire[case.x][case.y] = objet
-            goal = self._emotionToPos(self.emotion, self.repli)
-
-            while self.repli < 15 and self.armoire[goal.x][goal.y] != "": # Itère dans l'armoire connu
-                if self.armoire[goal.x][goal.y] != None:
-                    if goal.equals(case) : return Action.PRENDRE
-                    return self._deplacementArmoire(case, goal)
-                self.repli += 1
-                if self.repli < 15 : goal = self._emotionToPos(self.emotion, self.repli)
-
-            if self.repli > 15 : return Action.ATTENDRE # TODO : A changer par un abandon
-            
-            return self._deplacementArmoire(case, goal)
-
-        else:
-            return self._aller_vers(percu, self.posArmoire)
-
-    def _emotionToPos(self, emotion : tuple[str, str], repli:int) -> Pos:
-        x = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"].index(emotion[0])
-        y = ["faible", "moyenne", "forte"].index(emotion[1])
-
-        if repli == 0 : pass
-
-        elif repli <= 2: # On cherche les autres intensités de la même émotion
-            y = self._replyY(y, repli)
-
-        elif repli <= 5: # Casier 1 sup
-            decal = 1
-            x = (x + decal) % 8
-            y = self._replyY(y, repli - 2)
-
-        elif repli <= 8: # Casier 1 inf
-            decal = 1
-            x = (x - decal) % 8
-            y = self._replyY(y, repli - 5)
-
-        elif repli <= 11: # Casier sup 2
-            decal = 2
-            x = (x + decal) % 8
-            y = self._replyY(y, repli - 5)
-
-        else : # Casier inf 2
-            decal = 2
-            x = (x - decal) % 8
-            y = self._replyY(y, repli - 11)
-
-        
-        return Pos(x, y)
-
-    def _replyY(self, y:int, repli:int) -> int:
-        if repli == 0: return y
-        if y == 2 : return y - repli
-        elif y == 0 : return y + repli
-        else : return 0 if repli == 1 else 2
-
     def _deplacementArmoire(self, depart:Pos, target:Pos) -> Action:
         dx = (target.x - depart.x) % 8
 
@@ -180,6 +124,79 @@ class Robot:
         if target.y < depart.y:
             return Action.CHERCHER_N
         return Action.CHERCHER_S
+
+    def _emotionToPos(self, emotion : tuple[str, str]) -> Pos:
+        x = ["joie", "confiance", "peur", "surprise", "tristesse", "degout", "colere", "anticipation"].index(emotion[0])
+        y = ["faible", "moyenne", "forte"].index(emotion[1])
+        return Pos(x, y)
+
+    def _updateRepli(self):
+        bestCase = self._emotionToPos(self.emotion)
+        if self.repli == Repli.AUCUN:
+            if self.armoire[bestCase.x][bestCase.y] != "": return
+            self.repli = Repli.INTENSITE
+
+        if self.repli == Repli.INTENSITE:
+            posToCheck = [Pos(bestCase.x, y) for y in range(3) if y!=bestCase.y]
+            if any(self.armoire[p.x][p.y] != "" for p in posToCheck): return
+            self.repli = Repli.VOISINE_1
+
+        if self.repli == Repli.VOISINE_1:
+            posToCheck = [Pos((bestCase.x + x) % 8, y) for x in (1, -1) for y in range(3)]
+            if any(self.armoire[p.x][p.y] != "" for p in posToCheck): return
+            self.repli = Repli.VOISINE_2
+
+        if self.repli == Repli.VOISINE_2:
+            posToCheck = [Pos((bestCase.x + x) % 8, y) for x in (2, -2) for y in range(3)]
+            if any(self.armoire[p.x][p.y] != "" for p in posToCheck): return
+        raise Exception("Erreur : Plus aucun objet candidat disponible dans l'armoire")
+
+    def _getGoal(self) -> Pos:
+        candidats = []
+        bestCase = self._emotionToPos(self.emotion)
+        orderedY = sorted(range(3), key=lambda y: (abs(y - bestCase.y), y))
+        match self.repli:
+            case Repli.AUCUN:
+                return bestCase
+            case Repli.INTENSITE:
+                candidats = [
+                    Pos(bestCase.x, y) 
+                    for y in orderedY
+                    # if y != bestCase.y and self.armoire[bestCase.x][y] != ""
+                ]
+            case Repli.VOISINE_1:
+                candidats = [
+                    Pos((bestCase.x + x) % 8, y) 
+                    for x in (1, -1) 
+                    for y in orderedY
+                    # if self.armoire[(bestCase.x + x) % 8][y] != ""
+                ]
+            case Repli.VOISINE_2:
+                candidats = [
+                    Pos((bestCase.x + x) % 8, y) 
+                    for x in (2, -2) 
+                    for y in orderedY
+                    # if self.armoire[(bestCase.x + x) % 8][y] != ""
+                ]
+
+        for pos in candidats:
+            if self.armoire[pos.x][pos.y] != "":
+                return pos
+            
+        raise Exception("Erreur : Aucune case candidate trouvée")
+
+    def _procedureArmoire(self, percu: Perception) -> Action:
+        if percu.posRobot.taxicabDistanceTo(self.posArmoire.x, self.posArmoire.y) == 1:
+            case, objet = percu.caseArmoireRevele
+            self.armoire[case.x][case.y] = objet
+            self._updateRepli()
+            goal = self._getGoal()
+
+            if case == goal: return Action.PRENDRE
+            return self._deplacementArmoire(case, goal)
+
+        else:
+            return self._aller_vers(percu, self.posArmoire)
 
     def _procedureResident(self, percu: Perception) -> Action:
         if percu.posRobot.taxicabDistanceTo(self.mission[1].x, self.mission[1].y) == 1 :
@@ -226,7 +243,7 @@ class Robot:
         self.mission = None
         self.emotion = ("", "")
         self.objet = ""
-        self.repli = 0
+        self.repli = Repli.AUCUN
 
     def isObjetTenu(self) -> bool:
         return self.objet != ""

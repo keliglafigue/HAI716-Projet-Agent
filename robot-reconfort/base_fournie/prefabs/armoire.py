@@ -21,8 +21,8 @@ class Armoire:
         for casier in dico.get("casiers"):
             ligne = casier.get("ligne")
             colonne = casier.get("colonne")
-
-            mat[colonne][ligne] = casier.get("objet")
+            objet = casier.get("objet")
+            mat[colonne][ligne] = objet if objet is not None else ""
         
         self.contenu = contenuArmoire(3, 8, mat)
     
