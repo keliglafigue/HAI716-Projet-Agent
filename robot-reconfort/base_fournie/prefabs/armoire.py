@@ -9,7 +9,7 @@ class Armoire:
     """
 
     def __init__(self, dico : Dict[str, Any]):
-        self.pos_selecteur = Pos(0, 0)
+        self.pos_selecteur = Pos(*dico.get("casier_depart"))
         # Vérifier que la position est raccord avec l'émotions et l'intensité
         mat = []
         for i in range(8):

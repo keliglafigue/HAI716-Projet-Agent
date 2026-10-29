@@ -34,7 +34,6 @@ class Action(Enum):
     CONSULTER = ("CONSULTER", None)
 
     # Déplacement du curseur dans l'armoire
-    # TODO : chercher une manière d'encoder la stratégie de replis au sein de l'action
     CHERCHER_N = ("CHERCHER", "N")
     CHERCHER_S = ("CHERCHER", "S")
     CHERCHER_E = ("CHERCHER", "E")

@@ -46,7 +46,7 @@ class Carte:
                 match legende.get(char):
                     case 'mur' : line.append(Cellule.MUR)
                     case 'libre' : line.append(Cellule.LIBRE)
-                    case 'depart du robot' : line.append(Cellule.LIBRE) # A modifier
+                    case 'depart du robot' : line.append(Cellule.LIBRE) # A modifier # Pourquoi ?
                     case 'armoire' : line.append(Cellule.ARMOIRE)
                     case 'dictionnaire' : line.append(Cellule.DICTIONNAIRE)
                     case 'resident' : line.append(Cellule.RESIDENT)

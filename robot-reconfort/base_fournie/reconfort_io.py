@@ -381,7 +381,7 @@ def charger_armoire(chemin: str | Path) -> Dict[str, Any]:
     for i, coord in enumerate(casier_depart):
         if not isinstance(coord, int): raise ErreurArmoireMauvaisType(f"casier_depart[{i}]", "int")
         if i >= 2 : raise ErreurArmoireParamInvalide("casier_depart", "doit contenir exactement 2 coordonnées")
-        max = (i == 0) if 2 else 7
+        max = 2 if (i == 0) else 7
         if coord < 0 or coord > max: raise ErreurArmoireParamInvalide("casier_depart", f"casier_depart[{i}] doit être compris entre 0 et {max}")
 
     # Casiers
@@ -566,7 +566,7 @@ class Trace:
             "t": len(self.pas),
             "demande": demande,
             "position": [int(position.x), int(position.y)],
-            "casier": [int(casier.x), int(casier.x)],
+            "casier": [int(casier.x), int(casier.y)],
             "action": action,
             "argument": argument,
             "perception": dict(perception) if perception else None,

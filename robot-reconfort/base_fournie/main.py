@@ -29,6 +29,7 @@ def main(argv: list[str]) -> int:
         carte = rio.charger_carte(chemin_carte)
         # TODO : vérifier si les noms des cartes et armoire correspondent à ceux dans le scénario
         scenario = rio.charger_scenario(chemin_scenario)
+        if scenario["carte"] != carte["nom"]: raise rio.ErreurScenarioParamInvalide("carte", "Il ne correspond pas à la carte donné")
         dictionnaire = rio.charger_dictionnaire(dossier_donnees / "dictionnaire.json")
         armoire = rio.charger_armoire(dossier_donnees / f"{scenario['armoire']}.json")
     except rio.ErreurFichier as err:
@@ -46,6 +47,8 @@ def main(argv: list[str]) -> int:
     except rio.ErreurArmoire as err:
         print(f"erreur dans le fichier '{dossier_donnees / f"{scenario['armoire']}.json"}' : {err}", file=sys.stderr)
         return 1
+    except Exception as err:
+        print(f"Erreur")
 
     monde = Monde(carte, dictionnaire, armoire, scenario["nom"], chemin_sortie)
 

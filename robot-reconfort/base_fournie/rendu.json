@@ -4,6 +4,6 @@
   "equipe": ["RATHGEBER-KIVITS Éloi", "SOARES--QUEBRIAC Kélig"],
   "langage": "Python 3",
   "preparation": [],
-  "commande": ["python", "agent.py"],
+  "commande": ["python", "main.py"],
   "video": "demo.mp4"
 }
