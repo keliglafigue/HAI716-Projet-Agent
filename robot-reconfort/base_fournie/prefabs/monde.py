@@ -190,6 +190,7 @@ class Monde:
                 if self.valider_action(action):
                     self.ecrire_pas(action, self.percu)
                     self.executer_action(action)
+                    
             except Exception as e:
                 message = str(e)
                 self.logger.ajouter_livraison(

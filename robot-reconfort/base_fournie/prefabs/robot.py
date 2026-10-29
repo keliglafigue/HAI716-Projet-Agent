@@ -97,7 +97,7 @@ class Robot:
 
         match dir:
             case None:
-                raise Exception("Erreur : Emplacement inaccessible")
+                raise Exception("resident/emplacement inaccessible")
             case Direction.N:
                 return Action.AVANCER_N
             case Direction.S:
@@ -149,7 +149,7 @@ class Robot:
         if self.repli == Repli.VOISINE_2:
             posToCheck = [Pos((bestCase.x + x) % 8, y) for x in (2, -2) for y in range(3)]
             if any(self.armoire[p.x][p.y] != "" for p in posToCheck): return
-        raise Exception("Erreur : Plus aucun objet candidat disponible dans l'armoire")
+        raise Exception("armoire vide")
 
     def _getGoal(self) -> Pos:
         candidats = []
@@ -183,7 +183,7 @@ class Robot:
             if self.armoire[pos.x][pos.y] != "":
                 return pos
             
-        raise Exception("Erreur : Aucune case candidate trouvée")
+        raise Exception("armoire vide")
 
     def _procedureArmoire(self, percu: Perception) -> Action:
         if percu.posRobot.taxicabDistanceTo(self.posArmoire.x, self.posArmoire.y) == 1:

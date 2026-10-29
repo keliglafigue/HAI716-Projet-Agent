@@ -27,7 +27,7 @@ class Dictionnaire:
         for mot in message:
             if self.dico.get(mot): return self.dico.get(mot) # Pas joli
 
-        return [] # Le mot n'apparait pas dans le dictionnaire
+        raise Exception("emotion indeterminee")
 
 
         
