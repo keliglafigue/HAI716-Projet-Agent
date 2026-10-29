@@ -25,37 +25,37 @@ class Perception:
 
 class Action(Enum):
     # Déplacement sur le plan
-    AVANCER_N = 0
-    AVANCER_S = 1
-    AVANCER_E = 2
-    AVANCER_O = 3
+    AVANCER_N = ("AVANCER", "N")
+    AVANCER_S = ("AVANCER", "S")
+    AVANCER_E = ("AVANCER", "E")
+    AVANCER_O = ("AVANCER", "O")
 
     # Recherche dans le dictionnaire
-    CONSULTER = 4
+    CONSULTER = ("CONSULTER", None)
 
     # Déplacement du curseur dans l'armoire
     # TODO : chercher une manière d'encoder la stratégie de replis au sein de l'action
-    CHERCHER_N = 5
-    CHERCHER_S = 6
-    CHERCHER_E = 7
-    CHERCHER_O = 8
+    CHERCHER_N = ("CHERCHER", "N")
+    CHERCHER_S = ("CHERCHER", "S")
+    CHERCHER_E = ("CHERCHER", "E")
+    CHERCHER_O = ("CHERCHER", "O")
 
     # Récupère un objet de l'armoire au curseur
-    PRENDRE = 9
+    PRENDRE = ("PRENDRE", None)
 
     # Remet un objet dans l'armoire 
-    DONNER = 10
+    DONNER = ("DONNER", None)
 
-    ATTENDRE = 11
+    ATTENDRE = ("ATTENDRE", None)
 
     def __str__(self):
         return self.name
 
 class Repli(Enum):
-    AUCUN = 0
-    INTENSITE = 1
-    VOISINE_1 = 2
-    VOISINE_2 = 3
+    AUCUN = "aucun"
+    INTENSITE = "intensite"
+    VOISINE_1 = "voisine_1"
+    VOISINE_2 = "voisine_2"
 
 class Robot:
     """
@@ -82,8 +82,8 @@ class Robot:
     def isTacheEnCours(self) -> bool:
         return self.mission is not None
 
-    def nouvelleDemande(self, requete:str, posRendu: Pos, idResident: str):
-        self.mission = (requete, posRendu, idResident)
+    def nouvelleDemande(self, requete:str, posRendu: Pos, idResident: str, numRequete: int):
+        self.mission = (requete, posRendu, idResident, numRequete)
 
     def _aller_vers(self, percu:Perception, emplacement: Pos):
         if percu.posRobot == emplacement:
@@ -262,3 +262,11 @@ class Robot:
 
     def __str__(self):
         return str(self.carte)
+
+    def get_repli(self):
+        return self.repli
+
+    def getRequeteNum(self):
+        if self.isTacheEnCours():
+            return self.mission[3]
+        raise Exception("Erreur : Aucune requête en cours pour le robot")

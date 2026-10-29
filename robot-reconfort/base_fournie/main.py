@@ -47,14 +47,15 @@ def main(argv: list[str]) -> int:
         print(f"erreur dans le fichier '{dossier_donnees / f"{scenario['armoire']}.json"}' : {err}", file=sys.stderr)
         return 1
 
-    monde = Monde(carte, dictionnaire, armoire)
+    monde = Monde(carte, dictionnaire, armoire, scenario["nom"], chemin_sortie)
 
     for demande in scenario["demandes"]:
         # Mettre dans un try plus tard pour une gestion propre des erreurs
         monde.executer_requete(demande)
         print("Demande numéro", demande["numero"],"effectuée")
-        pass
- 
+
+    monde.sortir()
+
     return 0
 
 if __name__ == "__main__":

@@ -534,8 +534,8 @@ class Trace:
     def ajouter_pas(
         self,
         demande: Optional[int],
-        position: Sequence[int],
-        casier: Sequence[int],
+        position: Pos,
+        casier: Pos,
         action: str,
         argument: Optional[str] = None,
         perception: Optional[Dict[str, str]] = None,
@@ -565,8 +565,8 @@ class Trace:
         self.pas.append({
             "t": len(self.pas),
             "demande": demande,
-            "position": [int(position[0]), int(position[1])],
-            "casier": [int(casier[0]), int(casier[1])],
+            "position": [int(position.x), int(position.y)],
+            "casier": [int(casier.x), int(casier.x)],
             "action": action,
             "argument": argument,
             "perception": dict(perception) if perception else None,
@@ -582,7 +582,7 @@ class Trace:
         resident: str,
         emotion: Optional[str],
         intensite: Optional[str],
-        casier_choisi: Optional[Sequence[int]],
+        casier_choisi: Optional[Pos],
         repli: str,
         objet: Optional[str],
         succes: bool,
@@ -605,7 +605,7 @@ class Trace:
             "resident": resident,
             "emotion": emotion,
             "intensite": intensite,
-            "casier_choisi": ([int(casier_choisi[0]), int(casier_choisi[1])]
+            "casier_choisi": ([int(casier_choisi.x), int(casier_choisi.y)]
                               if casier_choisi is not None else None),
             "repli": repli,
             "objet": objet,

@@ -5,10 +5,11 @@ from prefabs.robot import Robot, Perception, Action
 from prefabs.dictionnaire import Dictionnaire
 from prefabs.carte import Carte, Cellule
 from prefabs.armoire import Armoire
+from reconfort_io import Trace
 
 class Monde:
 
-    def __init__(self, carte:Dict[str, Any], dico:Dict[str, Any], armoire:Dict[str, Any]):
+    def __init__(self, carte:Dict[str, Any], dico:Dict[str, Any], armoire:Dict[str, Any], nom_scenar, out_file):
         self.carte = Carte(carte)
         self.dico = Dictionnaire(dico)
         self.armoire = Armoire(armoire)
@@ -17,6 +18,8 @@ class Monde:
         self.robot = Robot(self.carte.getLargeur(), self.carte.getHauteur(), self.carte.getPosArmoire(), self.carte.getPosDico())
         self.percu = self.initPerception()
         self.nextPercu = self.initPerception()
+        self.logger = Trace(self.carte.nom, nom_scenar, self.carte.getEquipe())
+        self.out_file = out_file
         
     def initPerception(self) -> Perception:
         return Perception(
@@ -120,7 +123,7 @@ class Monde:
     def executer_action(self, action: Action) -> None:
         match action:
             case Action.ATTENDRE:
-                pass
+                RequestId = self.robot.getRequeteNum()
             case Action.AVANCER_N | Action.AVANCER_S | Action.AVANCER_E | Action.AVANCER_O:
                 dir = self._extraire_direction(action)
                 self.pos_robot.move(dir)
@@ -148,22 +151,59 @@ class Monde:
         )
         self.nextPercu = self.initPerception()
 
+    def ecrire_pas(self, action: Action, percu: Perception):
+        requestId = self.robot.getRequeteNum()
+        dicoPos = {
+            "N": percu.celluleN.value,
+            "S": percu.celluleS.value,
+            "E": percu.celluleE.value,
+            "O": percu.celluleO.value
+        }
+        posArmoire = self.carte.getPosArmoire()
+        contenuCasier = self.armoire.regarderObjet() if self.pos_robot.taxicabDistanceTo(posArmoire.x, posArmoire.y) == 1 else None
+        self.logger.ajouter_pas(requestId, self.pos_robot, self.armoire.getPosSelecteur(), action.value[0], action.value[1], dicoPos, contenuCasier)
+
+        if action == Action.DONNER:
+            self.logger.ajouter_livraison(
+                self.robot.getRequeteNum(), 
+                self.robot.getWhoMadeRequest(), 
+                self.robot.emotion[0],
+                self.robot.emotion[1],
+                self.armoire.getPosSelecteur(),
+                self.robot.get_repli().value,
+                self.robot.objet,
+                True
+            )
+
     def executer_requete(self, requete: Dict[str, Any]) -> None:
         if self.robot.isTacheEnCours():
             raise Exception("Erreur : Une requête est déjà en cours d'exécution sur ce robot")
 
         message = requete.get("message")
         posResident = self.carte.getPosResident(requete.get("resident"))
-        self.robot.nouvelleDemande(message, posResident, requete.get("resident"))
+        self.robot.nouvelleDemande(message, posResident, requete.get("resident"), requete.get("numero"))
 
         while self.robot.isTacheEnCours():
-            print(self)
 
-            action = self.robot.executerPas(self.percu) # Les paramètres nécessaire à l'exécution seront passés en paramètre
-            if self.valider_action(action):
-                self.executer_action(action)
-            else: 
-                raise Exception("Erreur : l'action ", action, " n'est pas autorisée dans ce contexte")
+            try:
+                action = self.robot.executerPas(self.percu) # Les paramètres nécessaire à l'exécution seront passés en paramètre
+                if self.valider_action(action):
+                    self.ecrire_pas(action, self.percu)
+                    self.executer_action(action)
+            except Exception as e:
+                message = str(e)
+                self.logger.ajouter_livraison(
+                    self.robot.getRequeteNum(), 
+                    self.robot.getWhoMadeRequest(), 
+                    self.robot.emotion[0],
+                    self.robot.emotion[1],
+                    self.armoire.getPosSelecteur() if self.robot.objet != "" else None,
+                    self.robot.get_repli().value,
+                    self.robot.objet if self.robot.objet != "" else None,
+                    False,
+                    message
+                )
+                self.robot.reset()
 
             self.update_perception()
 
@@ -175,7 +215,11 @@ class Monde:
 
         res += "\nPos robot : " + str(self.pos_robot)
         res += "\nCurseur Armoire : " + str(self.armoire.getPosSelecteur())
+        res += "\nStratégie de repli : " + self.robot.get_repli().value
         res += "\nObjet tenu : " + str(self.robot.objet)
         res += "\nMission actuel : " + str(self.robot.mission)
 
         return res
+
+    def sortir(self):
+        self.logger.ecrire(self.out_file)

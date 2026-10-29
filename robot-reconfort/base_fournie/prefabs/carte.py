@@ -3,11 +3,11 @@ from typing import Any, Dict
 from prefabs.utils import Pos, File, Direction
 
 class Cellule(Enum) :
-    MUR = "#"
-    LIBRE = " "
-    ARMOIRE = "A"
-    DICTIONNAIRE = "D"
-    RESIDENT = "R"
+    MUR = "mur"
+    LIBRE = "libre"
+    ARMOIRE = "armoire"
+    DICTIONNAIRE = "dictionnaire"
+    RESIDENT = "resident"
 
 
 class Carte:
@@ -28,6 +28,7 @@ class Carte:
 
         self.hauteur = base_carte.get("dimensions").get("hauteur")
         self.largeur = base_carte.get("dimensions").get("largeur")
+        self.nom = base_carte.get("nom")
 
         yPosArmoire, xPosArmoire = base_carte.get("armoire").get("position")
         self.posArmoire = Pos(xPosArmoire, yPosArmoire)
@@ -110,6 +111,9 @@ class Carte:
                 res += self.carte[y][x].value
             res += "\n"
         return res
+
+    def getEquipe(self):
+        return [self.residents[k][0] for k in self.residents]
 
 class Case:
     """
