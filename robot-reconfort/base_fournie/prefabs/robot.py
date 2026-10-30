@@ -96,7 +96,7 @@ class Robot:
 
         match dir:
             case None:
-                raise Exception("resident/emplacement inaccessible")
+                raise Exception("position inaccessible")
             case Direction.N:
                 return Action.AVANCER_N
             case Direction.S:
@@ -110,7 +110,10 @@ class Robot:
         if percu.posRobot.taxicabDistanceTo(self.posDico.x, self.posDico.y) == 1:
             return Action.CONSULTER
         else :
-            return self._aller_vers(percu, self.posDico)
+            try :
+                return self._aller_vers(percu, self.posDico)
+            except :
+                raise Exception("Dictionnaire Inaccessible")
 
     def _deplacementArmoire(self, depart:Pos, target:Pos) -> Action:
         dx = (target.x - depart.x) % 8
@@ -195,13 +198,20 @@ class Robot:
             return self._deplacementArmoire(case, goal)
 
         else:
-            return self._aller_vers(percu, self.posArmoire)
+            try :
+                return self._aller_vers(percu, self.posArmoire)
+            except :
+                raise Exception("Armoire Inaccessible")
+            
 
     def _procedureResident(self, percu: Perception) -> Action:
         if percu.posRobot.taxicabDistanceTo(self.mission[1].x, self.mission[1].y) == 1 :
             return Action.DONNER
         else:
-            return self._aller_vers(percu, self.mission[1])
+            try :
+                return self._aller_vers(percu, self.mission[1])
+            except :
+                raise Exception("Resident Inaccessible")
 
     def _updateAttribut(self, percu: Perception) -> None:
         # Maj de la carte

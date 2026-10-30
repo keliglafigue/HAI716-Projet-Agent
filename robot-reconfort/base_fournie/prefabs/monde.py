@@ -184,7 +184,7 @@ class Monde:
         self.robot.nouvelleDemande(message, posResident, requete.get("resident"), requete.get("numero"))
 
         while self.robot.isTacheEnCours():
-            # print(self)
+            print(self)
             try:
                 action = self.robot.executerPas(self.percu) # Les paramètres nécessaire à l'exécution seront passés en paramètre
                 if self.valider_action(action):
@@ -209,18 +209,19 @@ class Monde:
             self.update_perception()
 
     def __str__(self):
-        res = str(self.carte)
+        barre = "----------\n"
+        carte = str(self.carte)
         pos = self.pos_robot.y * (self.carte.getLargeur() + 1) + self.pos_robot.x
 
-        res = res[:pos] + "@" + res[pos+1:]
+        carte = carte[:pos] + "@" + carte[pos+1:]
 
-        res += "\nPos robot : " + str(self.pos_robot)
-        res += "\nCurseur Armoire : " + str(self.armoire.getPosSelecteur())
-        res += "\nStratégie de repli : " + self.robot.get_repli().value
-        res += "\nObjet tenu : " + str(self.robot.objet)
-        res += "\nMission actuel : " + str(self.robot.mission)
+        carte += "\nPos robot : " + str(self.pos_robot)
+        carte += "\nCurseur Armoire : " + str(self.armoire.getPosSelecteur())
+        carte += "\nStratégie de repli : " + self.robot.get_repli().value
+        carte += "\nObjet tenu : " + str(self.robot.objet)
+        carte += "\nMission actuel : " + str(self.robot.mission)
 
-        return res
+        return barre + carte
 
     def sortir(self):
         self.logger.ecrire(self.out_file)

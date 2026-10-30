@@ -1,0 +1,14 @@
+{
+  "format": "robot-reconfort/scenario",
+  "version": 1,
+  "nom": "vocabulaire",
+  "carte": "base",
+  "armoire": "armoire_standard",
+  "demandes": [
+    {
+      "numero": 1,
+      "resident": "R1",
+      "message": "J'ai le seum"
+    }
+    ]
+}

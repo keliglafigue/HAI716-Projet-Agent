@@ -1,0 +1,24 @@
+{
+  "format": "robot-reconfort/scenario",
+  "version": 1,
+  "nom": "line_blocked",
+  "carte": "line_blocked",
+  "armoire": "armoire_standard",
+  "demandes": [
+    {
+      "numero": 1,
+      "resident": "R1",
+      "message": "J'ai la flemme"
+    },
+    {
+      "numero": 2,
+      "resident": "R1",
+      "message": "A l'aide !"
+    },
+    {
+      "numero": 3,
+      "resident": "R1",
+      "message": "Au secours"
+    }
+    ]
+}
