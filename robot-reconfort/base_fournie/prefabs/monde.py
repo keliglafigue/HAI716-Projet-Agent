@@ -184,7 +184,7 @@ class Monde:
         self.robot.nouvelleDemande(message, posResident, requete.get("resident"), requete.get("numero"))
 
         while self.robot.isTacheEnCours():
-
+            # print(self)
             try:
                 action = self.robot.executerPas(self.percu) # Les paramètres nécessaire à l'exécution seront passés en paramètre
                 if self.valider_action(action):

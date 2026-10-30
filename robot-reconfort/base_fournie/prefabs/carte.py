@@ -9,6 +9,15 @@ class Cellule(Enum) :
     DICTIONNAIRE = "dictionnaire"
     RESIDENT = "resident"
 
+    @staticmethod
+    def cell_to_str(cell: Cellule):
+        match cell:
+            case Cellule.ARMOIRE: return "A"
+            case Cellule.DICTIONNAIRE: return "D"
+            case Cellule.LIBRE: return "."
+            case Cellule.MUR: return "#"
+            case Cellule.RESIDENT: return "R"
+
 
 class Carte:
     """
@@ -108,7 +117,7 @@ class Carte:
         res = ""
         for y in range(self.hauteur):
             for x in range(self.largeur):
-                res += self.carte[y][x].value
+                res += Cellule.cell_to_str(self.carte[y][x])
             res += "\n"
         return res
 
@@ -142,7 +151,7 @@ class Case:
         self.distance = n
 
     def __str__(self):
-        return self.type.value
+        return Cellule.cell_to_str(self.type)
 
 class CarteRobot:
     """
